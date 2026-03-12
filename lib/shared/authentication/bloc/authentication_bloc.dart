@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:bloc/bloc.dart';
-import 'package:connectify/features/member/member_repository_impl.dart';
+import 'package:connectify/features/tab_controller/tab_4_profile/domain/profile_repository.dart';
 import 'package:connectify/shared/authentication/repositories/authentication_repository.dart';
 import 'package:connectify/shared/models/member.dart';
 import 'package:equatable/equatable.dart';
@@ -10,7 +10,7 @@ part 'authentication_event.dart';
 part 'authentication_state.dart';
 
 class AuthenticationBloc extends Bloc<AuthenticationEvent, AuthenticationState> {
-  AuthenticationBloc({required AuthenticationRepository authenticationRepository, required MemberRepositoryImpl userRepository})
+  AuthenticationBloc({required AuthenticationRepository authenticationRepository, required ProfileRepository userRepository})
     : _authenticationRepository = authenticationRepository,
       _userRepository = userRepository,
       super(const AuthenticationState.unknown()) {
@@ -19,7 +19,7 @@ class AuthenticationBloc extends Bloc<AuthenticationEvent, AuthenticationState> 
   }
 
   final AuthenticationRepository _authenticationRepository;
-  final MemberRepositoryImpl _userRepository;
+  final ProfileRepository _userRepository;
 
   Future<void> _onSubscriptionRequested(AuthenticationSubscriptionRequested event, Emitter<AuthenticationState> emit) {
     return emit.onEach(
@@ -40,8 +40,8 @@ class AuthenticationBloc extends Bloc<AuthenticationEvent, AuthenticationState> 
     );
   }
 
-  void _onLogoutPressed(AuthenticationLogoutPressed event, Emitter<AuthenticationState> emit) {
-    _authenticationRepository.logOut();
+  Future<void> _onLogoutPressed(AuthenticationLogoutPressed event, Emitter<AuthenticationState> emit) async {
+    await _authenticationRepository.logOut();
   }
 
   Future<Member?> _tryGetUser() async {

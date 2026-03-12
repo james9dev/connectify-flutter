@@ -8,10 +8,10 @@ class ApiClient {
 
   ApiClient({required this.tokenStorage, http.Client? client}) : _client = client ?? http.Client();
 
-  final baseUrl = '3.39.233.98:8080';
+  final baseUrl = 'https://connectify-api-server-49287274728.us-west1.run.app';
 
   Future<http.Response> get(String path) async {
-    final url = Uri.http(baseUrl, path);
+    final url = _buildUri(path);
     final headers = await _defaultHeaders();
 
     final response = await _client.get(url, headers: headers);
@@ -21,7 +21,7 @@ class ApiClient {
   }
 
   Future<http.Response> post(String path, {Map<String, dynamic>? body}) async {
-    final url = Uri.http(baseUrl, path);
+    final url = _buildUri(path);
     final headers = await _defaultHeaders();
     final encodedBody = jsonEncode(body);
 
@@ -29,6 +29,11 @@ class ApiClient {
     _logResponse('POST', url, headers, encodedBody, response);
 
     return response;
+  }
+
+  Uri _buildUri(String path) {
+    final normalizedPath = path.startsWith('/') ? path : '/$path';
+    return Uri.parse('$baseUrl$normalizedPath');
   }
 
   Future<Map<String, String>> _defaultHeaders() async {

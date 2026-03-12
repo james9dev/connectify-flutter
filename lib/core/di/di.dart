@@ -1,5 +1,8 @@
 import 'package:connectify/features/member/member_client.dart';
 import 'package:connectify/features/member/member_repository_impl.dart';
+import 'package:connectify/features/sign/data/sign_client.dart';
+import 'package:connectify/features/sign/data/sign_repository_impl.dart';
+import 'package:connectify/features/sign/domain/sign_repository.dart';
 import 'package:connectify/features/tab_controller/tab_1_explore/domain/member_repository.dart';
 import 'package:connectify/features/tab_controller/tab_4_profile/domain/profile_repository.dart';
 import 'package:get_it/get_it.dart';
@@ -10,12 +13,21 @@ import '../network/token_storage.dart';
 final getIt = GetIt.instance;
 
 void setupDI() {
+  if (getIt.isRegistered<TokenStorage>()) {
+    return;
+  }
+
   // Core
   getIt.registerLazySingleton<TokenStorage>(() => TokenStorage());
   getIt.registerLazySingleton<ApiClient>(() => ApiClient(tokenStorage: getIt<TokenStorage>()));
 
   // Member
   getIt.registerLazySingleton<MemberClient>(() => MemberClient(getIt<ApiClient>()));
-  getIt.registerLazySingleton<MemberRepository>(() => MemberRepositoryImpl(getIt<MemberClient>()));
-  getIt.registerLazySingleton<ProfileRepository>(() => MemberRepositoryImpl(getIt<MemberClient>()));
+  getIt.registerLazySingleton<MemberRepositoryImpl>(() => MemberRepositoryImpl(getIt<MemberClient>()));
+  getIt.registerLazySingleton<MemberRepository>(() => getIt<MemberRepositoryImpl>());
+  getIt.registerLazySingleton<ProfileRepository>(() => getIt<MemberRepositoryImpl>());
+
+  // Sign
+  getIt.registerLazySingleton<SignClient>(() => SignClient(getIt<ApiClient>()));
+  getIt.registerLazySingleton<SignRepository>(() => SignRepositoryImpl(signClient: getIt<SignClient>()));
 }

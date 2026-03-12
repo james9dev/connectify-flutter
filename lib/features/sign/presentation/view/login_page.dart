@@ -1,5 +1,5 @@
 import 'package:connectify/shared/authentication/repositories/authentication_repository.dart';
-import 'package:connectify/features/sign/data/sign_repository_impl.dart';
+import 'package:connectify/features/sign/domain/sign_repository.dart';
 import 'package:connectify/features/sign/presentation/bloc/login_bloc.dart';
 import 'package:connectify/features/sign/presentation/view/login_form.dart';
 import 'package:flutter/material.dart';
@@ -18,7 +18,7 @@ class LoginPage extends StatelessWidget {
       body: Padding(
         padding: const EdgeInsets.all(12),
         child: BlocProvider(
-          create: (context) => LoginBloc(authenticationRepository: context.read<AuthenticationRepository>(), signRepository: context.read<SignRepositoryImpl>()),
+          create: (context) => LoginBloc(authenticationRepository: context.read<AuthenticationRepository>(), signRepository: context.read<SignRepository>()),
           child: const LoginForm(),
         ),
       ),

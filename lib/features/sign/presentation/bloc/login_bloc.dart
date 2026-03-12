@@ -47,22 +47,28 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
     }
   }
 
-  void _onKakaoSignClicked(KakaoSignClicked event, Emitter<LoginState> emit) async {
+  Future<void> _onKakaoSignClicked(KakaoSignClicked event, Emitter<LoginState> emit) async {
     final kakaoToken = await kakaoLogin();
 
-    if (kakaoToken != null) {
-      emit(state.copyWith(status: FormzSubmissionStatus.inProgress));
+    if (kakaoToken == null) {
+      emit(state.copyWith(status: FormzSubmissionStatus.failure));
+      return;
+    }
 
+    emit(state.copyWith(status: FormzSubmissionStatus.inProgress));
+
+    try {
       final accessToken = await _signRepository.sign(kakaoToken);
-      print("accessToken: $accessToken");
 
-      try {
-        await _authenticationRepository.logIn(accessToken: accessToken);
-
-        emit(state.copyWith(status: FormzSubmissionStatus.success));
-      } catch (_) {
+      if (accessToken == null) {
         emit(state.copyWith(status: FormzSubmissionStatus.failure));
+        return;
       }
+
+      await _authenticationRepository.logIn(accessToken: accessToken);
+      emit(state.copyWith(status: FormzSubmissionStatus.success));
+    } catch (_) {
+      emit(state.copyWith(status: FormzSubmissionStatus.failure));
     }
   }
 
@@ -71,6 +77,7 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
       try {
         OAuthToken authToken = await UserApi.instance.loginWithKakaoTalk();
         print('카카오톡으로 로그인 성공: ${authToken.accessToken}');
+        return authToken.accessToken;
       } catch (error) {
         print('카카오톡으로 로그인 실패 $error');
 

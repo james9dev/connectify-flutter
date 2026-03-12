@@ -14,7 +14,7 @@ enum AuthStatus {
 }
 
 class AuthenticationRepository {
-  final _controller = StreamController<AuthStatus>();
+  final _controller = StreamController<AuthStatus>.broadcast();
 
   final TokenStorage tokenStorage;
 
@@ -44,7 +44,7 @@ class AuthenticationRepository {
     _controller.add(AuthStatus.success);
   }
 
-  void logOut() async {
+  Future<void> logOut() async {
     /// ✅ 삭제
     await tokenStorage.clear();
 

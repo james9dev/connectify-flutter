@@ -23,15 +23,25 @@ class ProfileView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final user = context.select((AuthenticationBloc bloc) => bloc.state.user);
+    final authUser = context.select((AuthenticationBloc bloc) => bloc.state.user);
     return Scaffold(
       body: SafeArea(
         child: BlocBuilder<ProfileBloc, ProfileState>(
           builder: (context, state) {
+            if (state.status == ProfileStatus.loading && authUser == null) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            if (state.status == ProfileStatus.failure && authUser == null) {
+              return const Center(child: Text('프로필 정보를 불러오지 못했습니다.'));
+            }
+
+            final user = state.profile ?? authUser;
+
             return Column(
               children: [
-                Row(mainAxisAlignment: MainAxisAlignment.end, children: [_LogoutButton(), SizedBox(width: 24)]),
-                _UserId(),
+                Row(mainAxisAlignment: MainAxisAlignment.end, children: [const _LogoutButton(), const SizedBox(width: 24)]),
+                _UserId(user: user),
                 Expanded(
                   child: SingleChildScrollView(child: user != null ? _ProfileInfoView(member: user) : const SizedBox.shrink()),
                 ),
@@ -59,12 +69,11 @@ class _LogoutButton extends StatelessWidget {
 }
 
 class _UserId extends StatelessWidget {
-  const _UserId();
+  const _UserId({this.user});
+  final Member? user;
 
   @override
   Widget build(BuildContext context) {
-    final user = context.select((AuthenticationBloc bloc) => bloc.state.user);
-
     final userId = user?.id;
     final name = user?.name;
 

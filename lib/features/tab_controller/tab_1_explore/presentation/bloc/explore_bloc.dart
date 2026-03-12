@@ -19,15 +19,7 @@ class ExploreBloc extends Bloc<ExploreEvent, ExploreState> {
     emit(state.copyWith(status: ExploreStatus.loading));
     try {
       final members = await repository.fetchMembers();
-
-      // List<Member> members = [];
-      // members.addAll(tmp);
-      // members.addAll(tmp);
-      // members.addAll(tmp);
-      // members.addAll(tmp);
-
-      emit(state.copyWith(status: ExploreStatus.success, members: members));
-      emit(state.copyWith(selectedMember: members.first));
+      emit(state.copyWith(status: ExploreStatus.success, members: members, selectedMember: members.isNotEmpty ? members.first : null));
     } catch (_) {
       emit(state.copyWith(status: ExploreStatus.failure));
     }

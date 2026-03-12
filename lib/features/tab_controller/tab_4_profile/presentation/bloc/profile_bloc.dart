@@ -11,6 +11,12 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
   }
 
   Future<void> _onLoaded(ProfileLoaded event, Emitter<ProfileState> emit) async {
-    final profile = await repository.getProfile();
+    emit(state.copyWith(status: ProfileStatus.loading));
+    try {
+      final profile = await repository.getProfile();
+      emit(state.copyWith(status: ProfileStatus.success, profile: profile));
+    } catch (_) {
+      emit(state.copyWith(status: ProfileStatus.failure));
+    }
   }
 }

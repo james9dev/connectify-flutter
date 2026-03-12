@@ -65,3 +65,53 @@
 - 2순위: Explore/Profile 상태관리 결함 수정
 - 3순위: 테스트 리베이스 + 최소 스모크 테스트 확보
 - 4순위: 로그/예외 정책 정리
+
+## 10) 커밋 규칙 (Connectify 표준)
+- 목표: 커밋 하나만 읽어도 "무엇이 왜 바뀌었는지"와 "안전성"이 보이게 만든다.
+- 원칙 1: 하나의 커밋은 하나의 의도만 담는다. (기능 추가, 버그 수정, 리팩터링, 설정 변경을 섞지 않는다)
+- 원칙 2: 동작 변경과 포맷 변경을 분리한다. (예외: 변경 파일이 매우 적고 리뷰 이득이 없을 때만 합친다)
+- 원칙 3: 실패한 실험 코드는 커밋하지 않는다. (주석 처리된 임시 코드, 사용하지 않는 변수/파일 금지)
+- 원칙 4: 비밀값을 절대 커밋하지 않는다. (`.env`, 토큰, 키, 개인정보)
+
+- 메시지 형식: `<type>(<scope>): <summary>`
+- 제목 길이: 50자 내외, 최대 72자
+- 제목 문체: 현재형/명령형, 마침표 없음
+- 본문 규칙: 필요 시 아래 3줄 구조를 사용한다.
+- `why: 변경 이유`
+- `what: 핵심 변경`
+- `test: 검증 결과`
+
+- 타입(type) 표준:
+- `feat`: 사용자 가치가 늘어나는 기능 추가
+- `fix`: 실제 버그 수정
+- `refactor`: 동작 동일, 구조 개선
+- `perf`: 성능 개선
+- `test`: 테스트 추가/수정
+- `docs`: 문서 변경
+- `chore`: 개발 편의/설정/정리
+- `build`: 의존성/빌드 시스템 변경
+- `ci`: CI 파이프라인 변경
+- `revert`: 이전 커밋 되돌림
+
+- 스코프(scope) 표준:
+- `auth`, `sign`, `explore`, `profile`, `tab`, `network`, `di`, `core`, `ui`, `test`, `config`, `docs`
+
+- 커밋 크기 가이드:
+- 권장 변경 파일 수: 3~12개
+- 권장 순수 코드 변경량: 400라인 이내
+- 이 범위를 넘으면 커밋을 분리한다.
+
+- 검증 가이드:
+- `feat`/`fix`/`refactor`/`perf`는 최소 `flutter analyze`를 통과하거나, 미통과 사유를 본문 `test:`에 기록한다.
+- 테스트를 못 돌렸다면 이유를 본문에 반드시 남긴다.
+
+- Flutter 전용 규칙:
+- `*.g.dart` 변경은 원본 모델 변경과 같은 커밋에 포함한다.
+- DI 등록 변경(`get_it`)은 사용처 변경과 함께 커밋한다.
+- Bloc의 Event/State/View 변경은 가능한 한 같은 커밋에 묶는다.
+
+- 권장 예시:
+- `fix(auth): avoid duplicate DI registration in app bootstrap`
+- `fix(sign): return kakao token on talk-login success path`
+- `refactor(profile): model loading state in profile bloc`
+- `chore(config): set dart formatter line length to 200`

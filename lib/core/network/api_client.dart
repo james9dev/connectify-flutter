@@ -13,22 +13,55 @@ class ApiClient {
   Future<http.Response> get(String path) async {
     final url = _buildUri(path);
     final headers = await _defaultHeaders();
+    try {
+      final response = await _client.get(url, headers: headers);
+      _logResponse('GET', url, headers, null, response);
 
-    final response = await _client.get(url, headers: headers);
-    _logResponse('GET', url, headers, null, response);
+      if (response.statusCode >= 400) {
+        _logHttpError('GET', url, response);
+      }
 
-    return response;
+      return response;
+    } catch (error, stackTrace) {
+      _logException('GET', url, error, stackTrace);
+      rethrow;
+    }
   }
 
   Future<http.Response> post(String path, {Map<String, dynamic>? body}) async {
     final url = _buildUri(path);
     final headers = await _defaultHeaders();
     final encodedBody = jsonEncode(body);
+    try {
+      final response = await _client.post(url, headers: headers, body: encodedBody);
+      _logResponse('POST', url, headers, encodedBody, response);
 
-    final response = await _client.post(url, headers: headers, body: encodedBody);
-    _logResponse('POST', url, headers, encodedBody, response);
+      if (response.statusCode >= 400) {
+        _logHttpError('POST', url, response);
+      }
 
-    return response;
+      return response;
+    } catch (error, stackTrace) {
+      _logException('POST', url, error, stackTrace);
+      rethrow;
+    }
+  }
+
+  Future<http.Response> putAbsolute(String url, {required List<int> bodyBytes, Map<String, String>? headers}) async {
+    final uri = Uri.parse(url);
+    try {
+      final response = await _client.put(uri, headers: headers, body: bodyBytes);
+      _logResponse('PUT', uri, headers ?? const {}, '[bytes:${bodyBytes.length}]', response);
+
+      if (response.statusCode >= 400) {
+        _logHttpError('PUT', uri, response);
+      }
+
+      return response;
+    } catch (error, stackTrace) {
+      _logException('PUT', uri, error, stackTrace);
+      rethrow;
+    }
   }
 
   Uri _buildUri(String path) {
@@ -49,14 +82,35 @@ class ApiClient {
   }
 
   void _logResponse(String method, Uri url, Map<String, String> headers, String? requestBody, http.Response response) {
+    final sanitizedHeaders = Map<String, String>.from(headers);
+    if (sanitizedHeaders.containsKey('Authorization')) {
+      sanitizedHeaders['Authorization'] = 'Bearer ***';
+    }
+
     print('''\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
       $method ${url.toString()}
-      Headers: $headers
+      Headers: $sanitizedHeaders
       Request Body: $requestBody
     
       Response Code: ${response.statusCode}
       Response Body: ${response.body}
       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+      ''');
+  }
+
+  void _logHttpError(String method, Uri url, http.Response response) {
+    print('''\n❌ API ERROR
+      $method ${url.toString()}
+      Status Code: ${response.statusCode}
+      Error Body: ${response.body}
+      ''');
+  }
+
+  void _logException(String method, Uri url, Object error, StackTrace stackTrace) {
+    print('''\n❌ API EXCEPTION
+      $method ${url.toString()}
+      Error: $error
+      StackTrace: $stackTrace
       ''');
   }
 }

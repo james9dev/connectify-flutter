@@ -8,6 +8,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
 
   ProfileBloc(this.repository) : super(const ProfileState()) {
     on<ProfileLoaded>(_onLoaded);
+    on<ProfilePhotoUploadRequested>(_onPhotoUploadRequested);
   }
 
   Future<void> _onLoaded(ProfileLoaded event, Emitter<ProfileState> emit) async {
@@ -18,5 +19,33 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     } catch (_) {
       emit(state.copyWith(status: ProfileStatus.failure));
     }
+  }
+
+  Future<void> _onPhotoUploadRequested(ProfilePhotoUploadRequested event, Emitter<ProfileState> emit) async {
+    if (state.photoUploadStatus == ProfilePhotoUploadStatus.inProgress) {
+      return;
+    }
+
+    emit(state.copyWith(photoUploadStatus: ProfilePhotoUploadStatus.inProgress, photoUploadErrorMessage: null));
+
+    try {
+      final updatedProfile = await repository.uploadProfilePhoto(imageBytes: event.imageBytes, fileName: event.fileName, contentType: event.contentType);
+      emit(state.copyWith(status: ProfileStatus.success, profile: updatedProfile, photoUploadStatus: ProfilePhotoUploadStatus.success, photoUploadErrorMessage: null));
+    } catch (error) {
+      emit(state.copyWith(photoUploadStatus: ProfilePhotoUploadStatus.failure, photoUploadErrorMessage: _toErrorMessage(error)));
+    }
+  }
+
+  String _toErrorMessage(Object error) {
+    final raw = error.toString().trim();
+    if (raw.isEmpty) {
+      return '사진 업로드 중 오류가 발생했습니다.';
+    }
+
+    if (raw.startsWith('Exception: ')) {
+      return raw.replaceFirst('Exception: ', '');
+    }
+
+    return raw;
   }
 }

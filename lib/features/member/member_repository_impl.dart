@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:connectify/features/member/member_client.dart';
 import 'package:connectify/features/tab_controller/tab_4_profile/domain/profile_repository.dart';
 import 'package:connectify/shared/models/member.dart';
@@ -21,5 +23,41 @@ class MemberRepositoryImpl implements MemberRepository, ProfileRepository {
   @override
   Future<Member?> getProfile() async {
     return await _memberClient.getUser();
+  }
+
+  @override
+  Future<Member> uploadProfilePhoto({required List<int> imageBytes, required String fileName, required String contentType}) async {
+    final currentMember = await _memberClient.getUser();
+    if (currentMember == null) {
+      throw MemberClientException('프로필 정보를 찾지 못했습니다. 잠시 후 다시 시도해주세요.');
+    }
+
+    final nextOrder = _resolveNextPictureOrder(currentMember.profile.pictures);
+    final signedUpload = await _memberClient.createProfilePhotoUploadUrl(order: nextOrder, contentType: contentType, contentLength: imageBytes.length, fileName: fileName);
+
+    final requiredHeaders = Map<String, String>.from(signedUpload.requiredHeaders);
+    final hasContentType = requiredHeaders.keys.any((key) => key.toLowerCase() == 'content-type');
+    if (!hasContentType) {
+      requiredHeaders['Content-Type'] = contentType;
+    }
+
+    await _memberClient.uploadProfilePhotoToSignedUrl(uploadUrl: signedUpload.uploadUrl, imageBytes: imageBytes, requiredHeaders: requiredHeaders);
+    await _memberClient.completeProfilePhotoUpload(order: nextOrder, objectKey: signedUpload.objectKey);
+
+    final refreshedMember = await _memberClient.getUser();
+    if (refreshedMember != null) {
+      return refreshedMember;
+    }
+
+    return currentMember;
+  }
+
+  int _resolveNextPictureOrder(List<ProfilePicture> pictures) {
+    if (pictures.isEmpty) {
+      return 0;
+    }
+
+    final maxOrder = pictures.map((picture) => picture.order).reduce(max);
+    return maxOrder + 1;
   }
 }

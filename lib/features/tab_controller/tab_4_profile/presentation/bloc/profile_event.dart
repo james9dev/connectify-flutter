@@ -8,3 +8,14 @@ abstract class ProfileEvent extends Equatable {
 }
 
 class ProfileLoaded extends ProfileEvent {}
+
+class ProfilePhotoUploadRequested extends ProfileEvent {
+  final List<int> imageBytes;
+  final String fileName;
+  final String contentType;
+
+  const ProfilePhotoUploadRequested({required this.imageBytes, required this.fileName, required this.contentType});
+
+  @override
+  List<Object?> get props => [imageBytes, fileName, contentType];
+}

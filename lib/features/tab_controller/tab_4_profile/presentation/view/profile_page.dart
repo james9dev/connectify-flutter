@@ -8,6 +8,7 @@ import 'package:connectify/shared/models/member.dart';
 import 'package:dots_indicator/dots_indicator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:image_picker/image_picker.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -26,7 +27,23 @@ class ProfileView extends StatelessWidget {
     final authUser = context.select((AuthenticationBloc bloc) => bloc.state.user);
     return Scaffold(
       body: SafeArea(
-        child: BlocBuilder<ProfileBloc, ProfileState>(
+        child: BlocConsumer<ProfileBloc, ProfileState>(
+          listenWhen: (previous, current) {
+            if (previous.photoUploadStatus == current.photoUploadStatus) {
+              return false;
+            }
+
+            return current.photoUploadStatus == ProfilePhotoUploadStatus.success || current.photoUploadStatus == ProfilePhotoUploadStatus.failure;
+          },
+          listener: (context, state) {
+            if (state.photoUploadStatus == ProfilePhotoUploadStatus.success) {
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('프로필 사진 업로드가 완료되었습니다.')));
+            }
+
+            if (state.photoUploadStatus == ProfilePhotoUploadStatus.failure) {
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(state.photoUploadErrorMessage ?? '프로필 사진 업로드에 실패했습니다.')));
+            }
+          },
           builder: (context, state) {
             if (state.status == ProfileStatus.loading && authUser == null) {
               return const Center(child: CircularProgressIndicator());
@@ -43,7 +60,9 @@ class ProfileView extends StatelessWidget {
                 Row(mainAxisAlignment: MainAxisAlignment.end, children: [const _LogoutButton(), const SizedBox(width: 24)]),
                 _UserId(user: user),
                 Expanded(
-                  child: SingleChildScrollView(child: user != null ? _ProfileInfoView(member: user) : const SizedBox.shrink()),
+                  child: SingleChildScrollView(
+                    child: user != null ? _ProfileInfoView(member: user, isUploading: state.photoUploadStatus == ProfilePhotoUploadStatus.inProgress) : const SizedBox.shrink(),
+                  ),
                 ),
               ],
             );
@@ -83,20 +102,26 @@ class _UserId extends StatelessWidget {
 
 class _ProfileInfoView extends StatefulWidget {
   final Member member;
+  final bool isUploading;
 
-  const _ProfileInfoView({required this.member});
+  const _ProfileInfoView({required this.member, required this.isUploading});
 
   @override
   State<_ProfileInfoView> createState() => _ProfileInfoState();
 }
 
 class _ProfileInfoState extends State<_ProfileInfoView> {
+  static final ImagePicker _imagePicker = ImagePicker();
+
   Member get member => widget.member;
 
   int current = 0;
 
   @override
   Widget build(BuildContext context) {
+    final pictures = member.profile.pictures;
+    final currentPosition = pictures.isEmpty ? 0.0 : (current >= pictures.length ? pictures.length - 1 : current).toDouble();
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       child: Column(
@@ -119,30 +144,42 @@ class _ProfileInfoState extends State<_ProfileInfoView> {
               borderRadius: BorderRadius.circular(16),
               child: Stack(
                 children: [
-                  PageView.builder(
-                    itemCount: member.profile.pictures.length,
-                    onPageChanged: (index) => setState(() {
-                      current = index;
-                    }),
-                    itemBuilder: (context, index) {
-                      return Image.network(member.profile.pictures[index].imageUrl, fit: BoxFit.cover, width: double.infinity);
-                    },
-                  ),
-                  Positioned(
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    child: Center(
-                      child: DotsIndicator(
-                        dotsCount: member.profile.pictures.length,
-                        position: current.toDouble(),
-                        decorator: const DotsDecorator(
-                          color: Colors.grey, // inactive
-                          activeColor: Colors.pink, // active
+                  if (pictures.isEmpty)
+                    _EmptyPicturePlaceholder(onUploadPressed: widget.isUploading ? null : _pickAndUploadPhoto)
+                  else
+                    PageView.builder(
+                      itemCount: pictures.length,
+                      onPageChanged: (index) => setState(() {
+                        current = index;
+                      }),
+                      itemBuilder: (context, index) {
+                        return Image.network(pictures[index].imageUrl, fit: BoxFit.cover, width: double.infinity);
+                      },
+                    ),
+                  if (pictures.isNotEmpty)
+                    Positioned(
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      child: Center(
+                        child: DotsIndicator(
+                          dotsCount: pictures.length,
+                          position: currentPosition,
+                          decorator: const DotsDecorator(color: Colors.grey, activeColor: Colors.pink),
                         ),
                       ),
                     ),
+                  Positioned(
+                    top: 12,
+                    right: 12,
+                    child: ElevatedButton.icon(
+                      onPressed: widget.isUploading ? null : _pickAndUploadPhoto,
+                      icon: widget.isUploading ? const SizedBox(height: 14, width: 14, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.add_a_photo),
+                      label: Text(widget.isUploading ? '업로드중' : '사진 추가'),
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.black87, foregroundColor: Colors.white),
+                    ),
                   ),
+                  if (widget.isUploading) const Positioned.fill(child: ColoredBox(color: Color(0x33000000))),
                 ],
               ),
             ),
@@ -152,16 +189,14 @@ class _ProfileInfoState extends State<_ProfileInfoView> {
 
           Row(
             children: [
-              Text('Bio', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              const Text('Bio', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   minimumSize: Size.zero,
-                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2), // 패딩 설정
-                  textStyle: TextStyle(fontSize: 15, fontWeight: FontWeight.normal), // 텍스트 크기 설정
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.normal),
                 ),
-                onPressed: () {
-                  //context.read<AuthenticationBloc>().add(AuthenticationLogoutPressed());
-                },
+                onPressed: () {},
                 child: const Text('Edit'),
               ),
             ],
@@ -169,6 +204,87 @@ class _ProfileInfoState extends State<_ProfileInfoView> {
           Text(member.profile.bio ?? "안녕하세요!\n${member.profile.nickName} 입니다. 😊", style: const TextStyle(fontSize: 16, height: 1.5), textAlign: TextAlign.left),
 
           const SizedBox(height: 40),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _pickAndUploadPhoto() async {
+    try {
+      final selected = await _imagePicker.pickImage(source: ImageSource.gallery, imageQuality: 90, maxWidth: 1440);
+      if (!mounted || selected == null) {
+        return;
+      }
+
+      final fileName = selected.name.isNotEmpty ? selected.name : 'profile_${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final contentType = _resolveSupportedContentType(fileName);
+      if (contentType == null) {
+        _showSnackBar('지원하지 않는 파일 형식입니다. (jpg, png, webp)');
+        return;
+      }
+
+      final bytes = await selected.readAsBytes();
+      if (!mounted) {
+        return;
+      }
+
+      if (bytes.isEmpty) {
+        _showSnackBar('선택한 이미지가 비어 있습니다.');
+        return;
+      }
+
+      context.read<ProfileBloc>().add(ProfilePhotoUploadRequested(imageBytes: bytes, fileName: fileName, contentType: contentType));
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      _showSnackBar('사진 선택 중 오류가 발생했습니다.');
+    }
+  }
+
+  String? _resolveSupportedContentType(String fileName) {
+    final split = fileName.split('.');
+    if (split.length < 2) {
+      return null;
+    }
+
+    final ext = split.last.toLowerCase();
+    switch (ext) {
+      case 'jpg':
+      case 'jpeg':
+        return 'image/jpeg';
+      case 'png':
+        return 'image/png';
+      case 'webp':
+        return 'image/webp';
+      default:
+        return null;
+    }
+  }
+
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+  }
+}
+
+class _EmptyPicturePlaceholder extends StatelessWidget {
+  final VoidCallback? onUploadPressed;
+
+  const _EmptyPicturePlaceholder({required this.onUploadPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      color: const Color(0xFFF0F0F0),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.photo_outlined, size: 52, color: Colors.grey),
+          const SizedBox(height: 12),
+          const Text('등록된 프로필 사진이 없습니다.'),
+          const SizedBox(height: 12),
+          OutlinedButton.icon(onPressed: onUploadPressed, icon: const Icon(Icons.add_photo_alternate_outlined), label: const Text('사진 업로드')),
         ],
       ),
     );

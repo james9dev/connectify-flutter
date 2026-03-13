@@ -52,26 +52,46 @@ class ExploreView extends StatelessWidget {
   }
 }
 
-class _ProfileList extends StatelessWidget {
+class _ProfileList extends StatefulWidget {
   final List<Member> members;
   final Member? selected;
   const _ProfileList({required this.members, this.selected});
+
+  @override
+  State<_ProfileList> createState() => _ProfileListState();
+}
+
+class _ProfileListState extends State<_ProfileList> {
+  late final ScrollController _scrollController;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController = ScrollController();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       height: 120,
       child: Scrollbar(
-        controller: ScrollController(),
+        controller: _scrollController,
         thumbVisibility: true, // 항상 표시하고 싶으면 true
         child: ListView.separated(
+          controller: _scrollController,
           scrollDirection: Axis.horizontal,
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          itemCount: members.length,
+          itemCount: widget.members.length,
           separatorBuilder: (_, __) => const SizedBox(width: 20),
           itemBuilder: (context, index) {
-            final member = members[index];
-            final isSelected = selected?.id == member.id;
+            final member = widget.members[index];
+            final isSelected = widget.selected?.id == member.id;
             final avatarUrl = member.profile.pictures.isNotEmpty ? member.profile.pictures.first.imageUrl : null;
             return GestureDetector(
               onTap: () {

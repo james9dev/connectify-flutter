@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:connectify/core/di/di.dart';
 import 'package:connectify/features/tab_controller/tab_4_profile/domain/profile_repository.dart';
 import 'package:connectify/features/tab_controller/tab_4_profile/presentation/bloc/profile_bloc.dart';
@@ -174,7 +175,16 @@ class _ProfileInfoState extends State<_ProfileInfoView> {
                         current = index;
                       }),
                       itemBuilder: (context, index) {
-                        return Image.network(pictures[index].imageUrl, fit: BoxFit.cover, width: double.infinity);
+                        return CachedNetworkImage(
+                          imageUrl: pictures[index].imageUrl,
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          placeholder: (context, _) => const Center(child: CircularProgressIndicator()),
+                          errorWidget: (context, _, _) => const ColoredBox(
+                            color: Color(0xFFEAEAEA),
+                            child: Center(child: Icon(Icons.broken_image_outlined)),
+                          ),
+                        );
                       },
                     ),
                   if (pictures.isNotEmpty)

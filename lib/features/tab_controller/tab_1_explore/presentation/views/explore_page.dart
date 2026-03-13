@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:connectify/core/di/di.dart';
 import 'package:connectify/shared/models/member.dart';
 import 'package:connectify/features/tab_controller/tab_1_explore/domain/member_repository.dart';
@@ -71,6 +72,7 @@ class _ProfileList extends StatelessWidget {
           itemBuilder: (context, index) {
             final member = members[index];
             final isSelected = selected?.id == member.id;
+            final avatarUrl = member.profile.pictures.isNotEmpty ? member.profile.pictures.first.imageUrl : null;
             return GestureDetector(
               onTap: () {
                 context.read<ExploreBloc>().add(MemberSelected(isSelected ? null : member));
@@ -84,7 +86,11 @@ class _ProfileList extends StatelessWidget {
                       shape: BoxShape.circle,
                       border: isSelected ? Border.all(color: member.profile.gender == GenderType.FEMALE ? Colors.pinkAccent : Colors.blueAccent, width: 2) : null,
                     ),
-                    child: CircleAvatar(radius: 40, backgroundImage: NetworkImage(member.profile.pictures.first.imageUrl)),
+                    child: CircleAvatar(
+                      radius: 40,
+                      backgroundImage: avatarUrl != null ? CachedNetworkImageProvider(avatarUrl) : null,
+                      child: avatarUrl == null ? const Icon(Icons.person_outline) : null,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Text(member.name),
@@ -154,7 +160,16 @@ class _MemberState extends State<_MemberDetail> {
                         current = index;
                       }),
                       itemBuilder: (context, index) {
-                        return Image.network(member.profile.pictures[index].imageUrl, fit: BoxFit.cover, width: double.infinity);
+                        return CachedNetworkImage(
+                          imageUrl: member.profile.pictures[index].imageUrl,
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          placeholder: (context, _) => const Center(child: CircularProgressIndicator()),
+                          errorWidget: (context, _, _) => const ColoredBox(
+                            color: Color(0xFFEAEAEA),
+                            child: Center(child: Icon(Icons.broken_image_outlined)),
+                          ),
+                        );
                       },
                     ),
                     Positioned(

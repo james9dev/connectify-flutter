@@ -43,6 +43,7 @@ dependencies:
   flutter_secure_storage: ^9.2.4
   dots_indicator: ^4.0.1
   image_picker: ^1.1.2
+  cached_network_image: ^3.4.1
 
 
 dev_dependencies:

@@ -9,6 +9,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
   ProfileBloc(this.repository) : super(const ProfileState()) {
     on<ProfileLoaded>(_onLoaded);
     on<ProfilePhotoUploadRequested>(_onPhotoUploadRequested);
+    on<ProfilePhotoDeleteRequested>(_onPhotoDeleteRequested);
   }
 
   Future<void> _onLoaded(ProfileLoaded event, Emitter<ProfileState> emit) async {
@@ -22,11 +23,11 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
   }
 
   Future<void> _onPhotoUploadRequested(ProfilePhotoUploadRequested event, Emitter<ProfileState> emit) async {
-    if (state.photoUploadStatus == ProfilePhotoUploadStatus.inProgress) {
+    if (state.photoUploadStatus == ProfilePhotoUploadStatus.inProgress || state.photoDeleteStatus == ProfilePhotoDeleteStatus.inProgress) {
       return;
     }
 
-    emit(state.copyWith(photoUploadStatus: ProfilePhotoUploadStatus.inProgress, photoUploadErrorMessage: null));
+    emit(state.copyWith(photoUploadStatus: ProfilePhotoUploadStatus.inProgress, photoUploadErrorMessage: null, photoDeleteStatus: ProfilePhotoDeleteStatus.initial, photoDeleteErrorMessage: null));
 
     try {
       final updatedProfile = await repository.uploadProfilePhoto(imageBytes: event.imageBytes, fileName: event.fileName, contentType: event.contentType);
@@ -36,10 +37,25 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     }
   }
 
+  Future<void> _onPhotoDeleteRequested(ProfilePhotoDeleteRequested event, Emitter<ProfileState> emit) async {
+    if (state.photoUploadStatus == ProfilePhotoUploadStatus.inProgress || state.photoDeleteStatus == ProfilePhotoDeleteStatus.inProgress) {
+      return;
+    }
+
+    emit(state.copyWith(photoDeleteStatus: ProfilePhotoDeleteStatus.inProgress, photoDeleteErrorMessage: null, photoUploadStatus: ProfilePhotoUploadStatus.initial, photoUploadErrorMessage: null));
+
+    try {
+      final updatedProfile = await repository.deleteProfilePhoto(pictureId: event.pictureId);
+      emit(state.copyWith(status: ProfileStatus.success, profile: updatedProfile, photoDeleteStatus: ProfilePhotoDeleteStatus.success, photoDeleteErrorMessage: null));
+    } catch (error) {
+      emit(state.copyWith(photoDeleteStatus: ProfilePhotoDeleteStatus.failure, photoDeleteErrorMessage: _toErrorMessage(error)));
+    }
+  }
+
   String _toErrorMessage(Object error) {
     final raw = error.toString().trim();
     if (raw.isEmpty) {
-      return '사진 업로드 중 오류가 발생했습니다.';
+      return '사진 처리 중 오류가 발생했습니다.';
     }
 
     if (raw.startsWith('Exception: ')) {

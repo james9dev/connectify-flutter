@@ -19,3 +19,12 @@ class ProfilePhotoUploadRequested extends ProfileEvent {
   @override
   List<Object?> get props => [imageBytes, fileName, contentType];
 }
+
+class ProfilePhotoDeleteRequested extends ProfileEvent {
+  final int pictureId;
+
+  const ProfilePhotoDeleteRequested({required this.pictureId});
+
+  @override
+  List<Object?> get props => [pictureId];
+}

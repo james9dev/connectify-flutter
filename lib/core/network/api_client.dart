@@ -47,6 +47,24 @@ class ApiClient {
     }
   }
 
+  Future<http.Response> delete(String path) async {
+    final url = _buildUri(path);
+    final headers = await _defaultHeaders();
+    try {
+      final response = await _client.delete(url, headers: headers);
+      _logResponse('DELETE', url, headers, null, response);
+
+      if (response.statusCode >= 400) {
+        _logHttpError('DELETE', url, response);
+      }
+
+      return response;
+    } catch (error, stackTrace) {
+      _logException('DELETE', url, error, stackTrace);
+      rethrow;
+    }
+  }
+
   Future<http.Response> putAbsolute(String url, {required List<int> bodyBytes, Map<String, String>? headers}) async {
     final uri = Uri.parse(url);
     try {

@@ -29,11 +29,13 @@ class ProfileView extends StatelessWidget {
       body: SafeArea(
         child: BlocConsumer<ProfileBloc, ProfileState>(
           listenWhen: (previous, current) {
-            if (previous.photoUploadStatus == current.photoUploadStatus) {
-              return false;
-            }
-
-            return current.photoUploadStatus == ProfilePhotoUploadStatus.success || current.photoUploadStatus == ProfilePhotoUploadStatus.failure;
+            final uploadDone =
+                previous.photoUploadStatus != current.photoUploadStatus &&
+                (current.photoUploadStatus == ProfilePhotoUploadStatus.success || current.photoUploadStatus == ProfilePhotoUploadStatus.failure);
+            final deleteDone =
+                previous.photoDeleteStatus != current.photoDeleteStatus &&
+                (current.photoDeleteStatus == ProfilePhotoDeleteStatus.success || current.photoDeleteStatus == ProfilePhotoDeleteStatus.failure);
+            return uploadDone || deleteDone;
           },
           listener: (context, state) {
             if (state.photoUploadStatus == ProfilePhotoUploadStatus.success) {
@@ -42,6 +44,14 @@ class ProfileView extends StatelessWidget {
 
             if (state.photoUploadStatus == ProfilePhotoUploadStatus.failure) {
               ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(state.photoUploadErrorMessage ?? '프로필 사진 업로드에 실패했습니다.')));
+            }
+
+            if (state.photoDeleteStatus == ProfilePhotoDeleteStatus.success) {
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('프로필 사진이 삭제되었습니다.')));
+            }
+
+            if (state.photoDeleteStatus == ProfilePhotoDeleteStatus.failure) {
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(state.photoDeleteErrorMessage ?? '프로필 사진 삭제에 실패했습니다.')));
             }
           },
           builder: (context, state) {
@@ -61,7 +71,13 @@ class ProfileView extends StatelessWidget {
                 _UserId(user: user),
                 Expanded(
                   child: SingleChildScrollView(
-                    child: user != null ? _ProfileInfoView(member: user, isUploading: state.photoUploadStatus == ProfilePhotoUploadStatus.inProgress) : const SizedBox.shrink(),
+                    child: user != null
+                        ? _ProfileInfoView(
+                            member: user,
+                            isUploading: state.photoUploadStatus == ProfilePhotoUploadStatus.inProgress,
+                            isDeleting: state.photoDeleteStatus == ProfilePhotoDeleteStatus.inProgress,
+                          )
+                        : const SizedBox.shrink(),
                   ),
                 ),
               ],
@@ -103,8 +119,9 @@ class _UserId extends StatelessWidget {
 class _ProfileInfoView extends StatefulWidget {
   final Member member;
   final bool isUploading;
+  final bool isDeleting;
 
-  const _ProfileInfoView({required this.member, required this.isUploading});
+  const _ProfileInfoView({required this.member, required this.isUploading, required this.isDeleting});
 
   @override
   State<_ProfileInfoView> createState() => _ProfileInfoState();
@@ -117,10 +134,13 @@ class _ProfileInfoState extends State<_ProfileInfoView> {
 
   int current = 0;
 
+  bool get _isBusy => widget.isUploading || widget.isDeleting;
+
   @override
   Widget build(BuildContext context) {
     final pictures = member.profile.pictures;
-    final currentPosition = pictures.isEmpty ? 0.0 : (current >= pictures.length ? pictures.length - 1 : current).toDouble();
+    final currentIndex = pictures.isEmpty ? 0 : (current >= pictures.length ? pictures.length - 1 : current);
+    final currentPosition = pictures.isEmpty ? 0.0 : currentIndex.toDouble();
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
@@ -145,9 +165,10 @@ class _ProfileInfoState extends State<_ProfileInfoView> {
               child: Stack(
                 children: [
                   if (pictures.isEmpty)
-                    _EmptyPicturePlaceholder(onUploadPressed: widget.isUploading ? null : _pickAndUploadPhoto)
+                    _EmptyPicturePlaceholder(onUploadPressed: _isBusy ? null : _pickAndUploadPhoto)
                   else
                     PageView.builder(
+                      key: ValueKey(pictures.length),
                       itemCount: pictures.length,
                       onPageChanged: (index) => setState(() {
                         current = index;
@@ -155,6 +176,17 @@ class _ProfileInfoState extends State<_ProfileInfoView> {
                       itemBuilder: (context, index) {
                         return Image.network(pictures[index].imageUrl, fit: BoxFit.cover, width: double.infinity);
                       },
+                    ),
+                  if (pictures.isNotEmpty)
+                    Positioned(
+                      top: 12,
+                      left: 12,
+                      child: ElevatedButton.icon(
+                        onPressed: _isBusy ? null : () => _confirmAndDeleteCurrentPhoto(pictures[currentIndex].id),
+                        icon: widget.isDeleting ? const SizedBox(height: 14, width: 14, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.delete),
+                        label: const Text('삭제'),
+                        style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white),
+                      ),
                     ),
                   if (pictures.isNotEmpty)
                     Positioned(
@@ -173,13 +205,13 @@ class _ProfileInfoState extends State<_ProfileInfoView> {
                     top: 12,
                     right: 12,
                     child: ElevatedButton.icon(
-                      onPressed: widget.isUploading ? null : _pickAndUploadPhoto,
+                      onPressed: _isBusy ? null : _pickAndUploadPhoto,
                       icon: widget.isUploading ? const SizedBox(height: 14, width: 14, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.add_a_photo),
                       label: Text(widget.isUploading ? '업로드중' : '사진 추가'),
                       style: ElevatedButton.styleFrom(backgroundColor: Colors.black87, foregroundColor: Colors.white),
                     ),
                   ),
-                  if (widget.isUploading) const Positioned.fill(child: ColoredBox(color: Color(0x33000000))),
+                  if (_isBusy) const Positioned.fill(child: ColoredBox(color: Color(0x33000000))),
                 ],
               ),
             ),
@@ -240,6 +272,28 @@ class _ProfileInfoState extends State<_ProfileInfoView> {
       }
       _showSnackBar('사진 선택 중 오류가 발생했습니다.');
     }
+  }
+
+  Future<void> _confirmAndDeleteCurrentPhoto(int pictureId) async {
+    final isConfirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('사진 삭제'),
+          content: const Text('선택한 프로필 사진을 삭제할까요?'),
+          actions: [
+            TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('취소')),
+            TextButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('삭제')),
+          ],
+        );
+      },
+    );
+
+    if (!mounted || isConfirmed != true) {
+      return;
+    }
+
+    context.read<ProfileBloc>().add(ProfilePhotoDeleteRequested(pictureId: pictureId));
   }
 
   String? _resolveSupportedContentType(String fileName) {

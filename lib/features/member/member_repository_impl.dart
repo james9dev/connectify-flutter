@@ -52,6 +52,23 @@ class MemberRepositoryImpl implements MemberRepository, ProfileRepository {
     return currentMember;
   }
 
+  @override
+  Future<Member> deleteProfilePhoto({required int pictureId}) async {
+    final currentMember = await _memberClient.getUser();
+    if (currentMember == null) {
+      throw MemberClientException('프로필 정보를 찾지 못했습니다. 잠시 후 다시 시도해주세요.');
+    }
+
+    await _memberClient.deleteProfilePhoto(pictureId: pictureId);
+
+    final refreshedMember = await _memberClient.getUser();
+    if (refreshedMember != null) {
+      return refreshedMember;
+    }
+
+    return currentMember;
+  }
+
   int _resolveNextPictureOrder(List<ProfilePicture> pictures) {
     if (pictures.isEmpty) {
       return 0;

@@ -88,6 +88,17 @@ class MemberClient {
     throw MemberClientException(resultDto.message);
   }
 
+  Future<void> deleteProfilePhoto({required int pictureId}) async {
+    final response = await _apiClient.delete('/profile/photos/$pictureId');
+    final resultDto = _parseResultDto<Object?>(response, (json) => json);
+
+    if (response.statusCode >= 200 && response.statusCode < 300 && resultDto.success()) {
+      return;
+    }
+
+    throw MemberClientException(resultDto.message);
+  }
+
   ResultDto<T> _parseResultDto<T>(http.Response response, T Function(Object? json) fromJsonT) {
     final payload = _decodeJsonObject(response.body);
 

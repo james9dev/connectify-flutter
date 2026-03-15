@@ -115,3 +115,26 @@
 - `fix(sign): return kakao token on talk-login success path`
 - `refactor(profile): model loading state in profile bloc`
 - `chore(config): set dart formatter line length to 200`
+
+## 11) 외부 참조 소스 규칙 (기획 문서 + 서버 API)
+- 공식 기획 문서 루트: `../../Planning/Service Docs/`
+- 공식 서버 API 프로젝트 루트: `../../API_server_v2/`
+
+- 작업 시작 규칙:
+- Flutter 기능 작업을 시작하기 전에 기획 문서에서 요구사항/화면 정의를 먼저 확인한다.
+- API 연동 작업은 서버 프로젝트의 컨트롤러/DTO/문서를 함께 확인한 뒤 진행한다.
+- 기획 문서와 서버 구현이 충돌하면 임의 판단으로 확정하지 말고 차이를 명시해 보고한다.
+
+- 참조 우선순위:
+- 화면 UX/문구/플로우: 기획 문서 우선
+- 요청/응답 스펙/에러코드: 서버 API 구현 + 서버 문서 우선
+- Flutter 내부 구조/상태 흐름: 본 프로젝트 코드 우선
+
+- 변경 동기화 규칙:
+- API 스펙이 바뀌면 Flutter 변경과 함께 서버 근거 파일 경로를 기록한다.
+- 기획 변경으로 화면 동작이 바뀌면 기획 문서 파일명을 커밋/작업 요약에 남긴다.
+- 서버 변경이 선행되지 않은 필드는 Flutter에서 추정 구현하지 않는다. (임시값/가짜 필드 금지)
+
+- 권장 참조 파일 예시:
+- 기획: `기획서_mvp_v0.1.md`, `화면정의서_mvp_v0.1.md`, `기능 개요.md`, `profile_tags.md`
+- 서버: `../../API_server_v2/README.md`, `../../API_server_v2/docs/`, `../../API_server_v2/src/`

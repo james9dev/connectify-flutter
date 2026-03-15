@@ -28,10 +28,23 @@ class AuthenticationBloc extends Bloc<AuthenticationEvent, AuthenticationState> 
         switch (status) {
           case AuthStatus.unauthorized:
             return emit(const AuthenticationState.unauthenticated());
+          case AuthStatus.profileSetupRequired:
+            final pendingKakaoAccessToken = _authenticationRepository.pendingKakaoAccessToken;
+            final token = await _authenticationRepository.tokenStorage.getToken();
+            if (token == null && (pendingKakaoAccessToken == null || pendingKakaoAccessToken.isEmpty)) {
+              return emit(const AuthenticationState.unauthenticated());
+            }
+
+            final user = token == null ? null : await _tryGetUser();
+            return emit(AuthenticationState.authenticated(token, user, requiresProfileSetup: true, pendingKakaoAccessToken: pendingKakaoAccessToken));
           case AuthStatus.success:
             final token = await _authenticationRepository.tokenStorage.getToken();
+            if (token == null) {
+              return emit(const AuthenticationState.unauthenticated());
+            }
+
             final user = await _tryGetUser();
-            return emit(token != null ? AuthenticationState.authenticated(token, user) : const AuthenticationState.unauthenticated());
+            return emit(AuthenticationState.authenticated(token, user, requiresProfileSetup: false));
           default:
             return emit(const AuthenticationState.unknown());
         }
@@ -48,8 +61,7 @@ class AuthenticationBloc extends Bloc<AuthenticationEvent, AuthenticationState> 
     try {
       final user = await _userRepository.getProfile();
       return user;
-    } catch (error) {
-      print('tryGetUser error: $error');
+    } catch (_) {
       return null;
     }
   }

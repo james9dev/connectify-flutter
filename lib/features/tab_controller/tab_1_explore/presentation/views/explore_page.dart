@@ -141,6 +141,10 @@ class _MemberState extends State<_MemberDetail> {
 
   @override
   Widget build(BuildContext context) {
+    final pictureCount = member.profile.pictures.length;
+    final hasPictures = pictureCount > 0;
+    final indicatorPosition = pictureCount > 0 ? current.clamp(0, pictureCount - 1).toDouble() : 0.0;
+
     return Container(
       key: ValueKey(member.id),
       width: double.infinity,
@@ -174,39 +178,46 @@ class _MemberState extends State<_MemberDetail> {
                 borderRadius: BorderRadius.circular(16),
                 child: Stack(
                   children: [
-                    PageView.builder(
-                      itemCount: member.profile.pictures.length,
-                      onPageChanged: (index) => setState(() {
-                        current = index;
-                      }),
-                      itemBuilder: (context, index) {
-                        return CachedNetworkImage(
-                          imageUrl: member.profile.pictures[index].imageUrl,
-                          fit: BoxFit.cover,
-                          width: double.infinity,
-                          placeholder: (context, _) => const Center(child: CircularProgressIndicator()),
-                          errorWidget: (context, _, _) => const ColoredBox(
-                            color: Color(0xFFEAEAEA),
-                            child: Center(child: Icon(Icons.broken_image_outlined)),
-                          ),
-                        );
-                      },
-                    ),
-                    Positioned(
-                      bottom: 0,
-                      left: 0,
-                      right: 0,
-                      child: Center(
-                        child: DotsIndicator(
-                          dotsCount: member.profile.pictures.length,
-                          position: current.toDouble(),
-                          decorator: const DotsDecorator(
-                            color: Colors.grey, // inactive
-                            activeColor: Colors.pink, // active
+                    if (hasPictures)
+                      PageView.builder(
+                        itemCount: pictureCount,
+                        onPageChanged: (index) => setState(() {
+                          current = index;
+                        }),
+                        itemBuilder: (context, index) {
+                          return CachedNetworkImage(
+                            imageUrl: member.profile.pictures[index].imageUrl,
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                            placeholder: (context, _) => const Center(child: CircularProgressIndicator()),
+                            errorWidget: (context, _, _) => const ColoredBox(
+                              color: Color(0xFFEAEAEA),
+                              child: Center(child: Icon(Icons.broken_image_outlined)),
+                            ),
+                          );
+                        },
+                      )
+                    else
+                      const ColoredBox(
+                        color: Color(0xFFEAEAEA),
+                        child: Center(child: Icon(Icons.image_not_supported_outlined)),
+                      ),
+                    if (hasPictures)
+                      Positioned(
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        child: Center(
+                          child: DotsIndicator(
+                            dotsCount: pictureCount,
+                            position: indicatorPosition,
+                            decorator: const DotsDecorator(
+                              color: Colors.grey, // inactive
+                              activeColor: Colors.pink, // active
+                            ),
                           ),
                         ),
                       ),
-                    ),
                   ],
                 ),
               ),

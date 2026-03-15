@@ -1,4 +1,8 @@
+import 'package:connectify/features/onboarding/profile_basic/presentation/view/profile_basic_info_page.dart';
+import 'package:connectify/features/onboarding/profile_photo/data/profile_photo_repository_impl.dart';
+import 'package:connectify/features/onboarding/profile_photo/domain/profile_photo_repository.dart';
 import 'package:connectify/features/sign/domain/sign_repository.dart';
+import 'package:connectify/features/onboarding/profile_basic/domain/profile_basic_repository.dart';
 import 'package:connectify/shared/authentication/bloc/authentication_bloc.dart';
 import 'package:connectify/shared/authentication/repositories/authentication_repository.dart';
 import 'package:connectify/core/di/di.dart';
@@ -25,6 +29,14 @@ class App extends StatelessWidget {
         ),
         RepositoryProvider<SignRepository>(create: (_) => getIt<SignRepository>()),
         RepositoryProvider<ProfileRepository>(create: (_) => getIt<ProfileRepository>()),
+        RepositoryProvider<ProfileBasicRepository>(create: (_) => getIt<ProfileBasicRepository>()),
+        RepositoryProvider<ProfilePhotoRepository>(
+          create: (context) => OnboardingProfilePhotoRepositoryImpl(
+            signRepository: context.read<SignRepository>(),
+            profileRepository: context.read<ProfileRepository>(),
+            authenticationRepository: context.read<AuthenticationRepository>(),
+          ),
+        ),
       ],
       child: BlocProvider(
         lazy: false,
@@ -56,10 +68,15 @@ class _AppViewState extends State<AppView> {
         return BlocListener<AuthenticationBloc, AuthenticationState>(
           listener: (context, state) {
             switch (state.status) {
+              case AuthStatus.profileSetupRequired:
+                _navigator.pushAndRemoveUntil<void>(ProfileBasicInfoPage.route(), (route) => false);
+                break;
               case AuthStatus.success:
                 _navigator.pushAndRemoveUntil<void>(MainTabPage.route(), (route) => false);
+                break;
               case AuthStatus.unauthorized:
                 _navigator.pushAndRemoveUntil<void>(LoginPage.route(), (route) => false);
+                break;
               default:
                 break;
             }

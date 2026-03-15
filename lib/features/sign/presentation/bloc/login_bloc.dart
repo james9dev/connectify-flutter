@@ -58,15 +58,17 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
     emit(state.copyWith(status: FormzSubmissionStatus.inProgress));
 
     try {
-      final accessToken = await _signRepository.sign(kakaoToken);
-
-      if (accessToken == null) {
-        emit(state.copyWith(status: FormzSubmissionStatus.failure));
+      final authToken = await _signRepository.loginKakao(kakaoToken);
+      await _authenticationRepository.logIn(accessToken: authToken.accessToken, requireProfileSetup: false);
+      emit(state.copyWith(status: FormzSubmissionStatus.success));
+    } on SignRepositoryException catch (error) {
+      if (error.isNotRegisteredUser) {
+        await _authenticationRepository.beginKakaoSignUp(kakaoAccessToken: kakaoToken);
+        emit(state.copyWith(status: FormzSubmissionStatus.success));
         return;
       }
 
-      await _authenticationRepository.logIn(accessToken: accessToken);
-      emit(state.copyWith(status: FormzSubmissionStatus.success));
+      emit(state.copyWith(status: FormzSubmissionStatus.failure));
     } catch (_) {
       emit(state.copyWith(status: FormzSubmissionStatus.failure));
     }
@@ -76,11 +78,8 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
     if (await isKakaoTalkInstalled()) {
       try {
         OAuthToken authToken = await UserApi.instance.loginWithKakaoTalk();
-        print('카카오톡으로 로그인 성공: ${authToken.accessToken}');
         return authToken.accessToken;
       } catch (error) {
-        print('카카오톡으로 로그인 실패 $error');
-
         // 사용자가 카카오톡 설치 후 디바이스 권한 요청 화면에서 로그인을 취소한 경우,
         // 의도적인 로그인 취소로 보고 카카오계정으로 로그인 시도 없이 로그인 취소로 처리 (예: 뒤로 가기)
         if (error is PlatformException && error.code == 'CANCELED') {
@@ -89,22 +88,14 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
         // 카카오톡에 연결된 카카오계정이 없는 경우, 카카오계정으로 로그인
         try {
           OAuthToken authToken = await UserApi.instance.loginWithKakaoAccount();
-          print('카카오계정으로 로그인 성공: ${authToken.accessToken}');
-
           return authToken.accessToken;
-        } catch (error) {
-          print('카카오계정으로 로그인 실패 $error');
-        }
+        } catch (_) {}
       }
     } else {
       try {
         OAuthToken authToken = await UserApi.instance.loginWithKakaoAccount();
-        print('카카오계정으로 로그인 성공: ${authToken.accessToken}');
-
         return authToken.accessToken;
-      } catch (error) {
-        print('카카오계정으로 로그인 실패 $error');
-      }
+      } catch (_) {}
     }
 
     return null;

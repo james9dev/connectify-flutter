@@ -5,6 +5,7 @@ import 'package:connectify/core/network/token_storage.dart';
 enum AuthStatus {
   unknown,
   success, // 로그인 성공
+  profileSetupRequired, // 회원가입 직후 프로필 기본정보 입력 필요
   invalidCredentials, // 아이디/비번 오류
   tokenExpired, // 토큰 만료
   unauthorized, // 권한 없음 (401)
@@ -15,6 +16,7 @@ enum AuthStatus {
 
 class AuthenticationRepository {
   final _controller = StreamController<AuthStatus>.broadcast();
+  String? _pendingKakaoAccessToken;
 
   final TokenStorage tokenStorage;
 
@@ -32,7 +34,7 @@ class AuthenticationRepository {
     yield* _controller.stream;
   }
 
-  Future<void> logIn({required String? accessToken}) async {
+  Future<void> logIn({required String? accessToken, bool requireProfileSetup = false}) async {
     if (accessToken == null) {
       _controller.add(AuthStatus.unauthorized);
       return;
@@ -40,13 +42,30 @@ class AuthenticationRepository {
 
     /// ✅ 저장
     await tokenStorage.saveToken(accessToken);
+    _pendingKakaoAccessToken = null;
 
-    _controller.add(AuthStatus.success);
+    _controller.add(requireProfileSetup ? AuthStatus.profileSetupRequired : AuthStatus.success);
   }
+
+  Future<void> beginKakaoSignUp({required String kakaoAccessToken}) async {
+    _pendingKakaoAccessToken = kakaoAccessToken;
+    _controller.add(AuthStatus.profileSetupRequired);
+  }
+
+  Future<void> stageAccessToken(String accessToken) async {
+    await tokenStorage.saveToken(accessToken);
+  }
+
+  Future<void> clearStagedAccessToken() async {
+    await tokenStorage.clear();
+  }
+
+  String? get pendingKakaoAccessToken => _pendingKakaoAccessToken;
 
   Future<void> logOut() async {
     /// ✅ 삭제
     await tokenStorage.clear();
+    _pendingKakaoAccessToken = null;
 
     /// ✅ 전체 삭제
     //await storage.deleteAll();

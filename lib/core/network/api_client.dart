@@ -47,6 +47,25 @@ class ApiClient {
     }
   }
 
+  Future<http.Response> put(String path, {Map<String, dynamic>? body}) async {
+    final url = _buildUri(path);
+    final headers = await _defaultHeaders();
+    final encodedBody = jsonEncode(body);
+    try {
+      final response = await _client.put(url, headers: headers, body: encodedBody);
+      _logResponse('PUT', url, headers, encodedBody, response);
+
+      if (response.statusCode >= 400) {
+        _logHttpError('PUT', url, response);
+      }
+
+      return response;
+    } catch (error, stackTrace) {
+      _logException('PUT', url, error, stackTrace);
+      rethrow;
+    }
+  }
+
   Future<http.Response> delete(String path) async {
     final url = _buildUri(path);
     final headers = await _defaultHeaders();

@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:connectify/core/network/api_client.dart';
 import 'package:connectify/core/dto/result_dto.dart';
 import 'package:connectify/shared/models/member.dart';
+import 'package:connectify/shared/models/profile_tag_catalog.dart';
 import 'package:http/http.dart' as http;
 
 class MemberClient {
@@ -90,6 +91,61 @@ class MemberClient {
 
   Future<void> deleteProfilePhoto({required int pictureId}) async {
     final response = await _apiClient.delete('/profile/photos/$pictureId');
+    final resultDto = _parseResultDto<Object?>(response, (json) => json);
+
+    if (response.statusCode >= 200 && response.statusCode < 300 && resultDto.success()) {
+      return;
+    }
+
+    throw MemberClientException(resultDto.message);
+  }
+
+  Future<ProfileTagCatalog> getProfileTagCatalog() async {
+    final response = await _apiClient.get('/profile/catalog/tags');
+    final resultDto = _parseResultDto<ProfileTagCatalog>(response, (json) => ProfileTagCatalog.fromJson(json as Map<String, dynamic>));
+
+    if (response.statusCode >= 200 && response.statusCode < 300 && resultDto.success() && resultDto.data != null) {
+      return resultDto.data!;
+    }
+
+    throw MemberClientException(resultDto.message);
+  }
+
+  Future<List<String>> getProfileRegions() async {
+    final response = await _apiClient.get('/profile/catalog/regions');
+    final resultDto = _parseResultDto<ListDto<String>>(response, (json) => ListDto<String>.fromJson(json as Map<String, dynamic>, (value) => '${value ?? ''}'));
+
+    if (response.statusCode >= 200 && response.statusCode < 300 && resultDto.success() && resultDto.data != null) {
+      return resultDto.data!.values.map((region) => region.trim()).where((region) => region.isNotEmpty).toList(growable: false);
+    }
+
+    throw MemberClientException(resultDto.message);
+  }
+
+  Future<void> updateProfileBasicInfo({
+    required String nickName,
+    required GenderType gender,
+    required String birthyear,
+    required String birthday,
+    required String region,
+    required String bio,
+    required List<int> profileTagIds,
+    required List<int> preferredTagIds,
+  }) async {
+    final response = await _apiClient.put(
+      '/profile/update',
+      body: {
+        'nickName': nickName,
+        'gender': gender.name,
+        'birthyear': birthyear,
+        'birthday': birthday,
+        'region': region,
+        'bio': bio,
+        'profileTagIds': profileTagIds,
+        'preferredTagIds': preferredTagIds,
+      },
+    );
+
     final resultDto = _parseResultDto<Object?>(response, (json) => json);
 
     if (response.statusCode >= 200 && response.statusCode < 300 && resultDto.success()) {

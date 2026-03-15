@@ -24,6 +24,26 @@ class MemberRepositoryImpl implements MemberRepository, ProfileRepository, Profi
   }
 
   @override
+  Future<void> likeProfilePhoto({required int pictureId}) {
+    return _memberClient.likeProfilePhoto(pictureId: pictureId);
+  }
+
+  @override
+  Future<void> unlikeProfilePhoto({required int pictureId}) {
+    return _memberClient.unlikeProfilePhoto(pictureId: pictureId);
+  }
+
+  @override
+  Future<void> likeMember({required int memberId}) {
+    return _memberClient.likeMember(memberId: memberId);
+  }
+
+  @override
+  Future<void> cancelMemberLike({required int memberId}) {
+    return _memberClient.cancelMemberLike(memberId: memberId);
+  }
+
+  @override
   Future<Member?> getProfile() async {
     return await _memberClient.getUser();
   }

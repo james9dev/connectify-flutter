@@ -100,6 +100,50 @@ class MemberClient {
     throw MemberClientException(resultDto.message);
   }
 
+  Future<void> likeProfilePhoto({required int pictureId}) async {
+    final response = await _apiClient.post('/profile/photos/$pictureId/like');
+    final resultDto = _parseResultDto<Object?>(response, (json) => json);
+
+    if (response.statusCode >= 200 && response.statusCode < 300 && resultDto.success()) {
+      return;
+    }
+
+    throw MemberClientException(resultDto.message);
+  }
+
+  Future<void> unlikeProfilePhoto({required int pictureId}) async {
+    final response = await _apiClient.delete('/profile/photos/$pictureId/like');
+    final resultDto = _parseResultDto<Object?>(response, (json) => json);
+
+    if (response.statusCode >= 200 && response.statusCode < 300 && resultDto.success()) {
+      return;
+    }
+
+    throw MemberClientException(resultDto.message);
+  }
+
+  Future<void> likeMember({required int memberId}) async {
+    final response = await _apiClient.post('/profile/$memberId/like');
+    final resultDto = _parseResultDto<Object?>(response, (json) => json);
+
+    if (response.statusCode >= 200 && response.statusCode < 300 && resultDto.success()) {
+      return;
+    }
+
+    throw MemberClientException(resultDto.message);
+  }
+
+  Future<void> cancelMemberLike({required int memberId}) async {
+    final response = await _apiClient.delete('/profile/$memberId/like');
+    final resultDto = _parseResultDto<Object?>(response, (json) => json);
+
+    if (response.statusCode >= 200 && response.statusCode < 300 && resultDto.success()) {
+      return;
+    }
+
+    throw MemberClientException(resultDto.message);
+  }
+
   Future<ProfileTagCatalog> getProfileTagCatalog() async {
     final response = await _apiClient.get('/profile/catalog/tags');
     final resultDto = _parseResultDto<ProfileTagCatalog>(response, (json) => ProfileTagCatalog.fromJson(json as Map<String, dynamic>));

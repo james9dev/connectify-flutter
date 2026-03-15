@@ -32,9 +32,42 @@ Profile _$ProfileFromJson(Map<String, dynamic> json) =>
         height: (json['height'] as num?)?.toInt(),
         birthyear: json['birthyear'] as String?,
         birthday: json['birthday'] as String?,
-        pictures: (json['pictures'] as List<dynamic>)
-            .map((e) => ProfilePicture.fromJson(e as Map<String, dynamic>))
-            .toList(),
+        pictures: (json['pictures'] as List<dynamic>).map((e) => ProfilePicture.fromJson(e as Map<String, dynamic>)).toList(),
+        profileTagIds:
+            (json['profileTagIds'] as List<dynamic>?)
+                ?.map((e) {
+                  if (e is Map<String, dynamic>) {
+                    return ProfileTagSummary.fromJson(e);
+                  }
+                  if (e is Map) {
+                    return ProfileTagSummary.fromJson(e.map((key, value) => MapEntry('$key', value)));
+                  }
+                  if (e is num) {
+                    return ProfileTagSummary(id: e.toInt());
+                  }
+                  return const ProfileTagSummary(id: 0);
+                })
+                .where((tag) => tag.id > 0)
+                .toList(growable: false) ??
+            const <ProfileTagSummary>[],
+        preferredTagIds:
+            (json['preferredTagIds'] as List<dynamic>?)
+                ?.map((e) {
+                  if (e is Map<String, dynamic>) {
+                    return ProfileTagSummary.fromJson(e);
+                  }
+                  if (e is Map) {
+                    return ProfileTagSummary.fromJson(e.map((key, value) => MapEntry('$key', value)));
+                  }
+                  if (e is num) {
+                    return ProfileTagSummary(id: e.toInt());
+                  }
+                  return const ProfileTagSummary(id: 0);
+                })
+                .where((tag) => tag.id > 0)
+                .toList(growable: false) ??
+            const <ProfileTagSummary>[],
+        memberLikeStatus: json['memberLikeStatus'] as bool? ?? false,
       )
       ..job = json['job'] as String?
       ..company = json['company'] as String?
@@ -61,23 +94,29 @@ Map<String, dynamic> _$ProfileToJson(Profile instance) => <String, dynamic>{
   'location': instance.location,
   'bio': instance.bio,
   'pictures': instance.pictures,
+  'profileTagIds': instance.profileTagIds,
+  'preferredTagIds': instance.preferredTagIds,
+  'memberLikeStatus': instance.memberLikeStatus,
 };
 
-const _$GenderTypeEnumMap = {
-  GenderType.MALE: 'MALE',
-  GenderType.FEMALE: 'FEMALE',
+const _$GenderTypeEnumMap = {GenderType.MALE: 'MALE', GenderType.FEMALE: 'FEMALE'};
+
+ProfilePicture _$ProfilePictureFromJson(Map<String, dynamic> json) => ProfilePicture(
+  id: (json['id'] as num).toInt(),
+  imageUrl: ProfilePicture._decodeUrl(json['imageUrl'] as String),
+  order: (json['order'] as num).toInt(),
+  isPrimary: json['isPrimary'] as bool? ?? false,
+  pictureLikeStatus: json['pictureLikeStatus'] as bool? ?? false,
+);
+
+Map<String, dynamic> _$ProfilePictureToJson(ProfilePicture instance) => <String, dynamic>{
+  'id': instance.id,
+  'imageUrl': instance.imageUrl,
+  'order': instance.order,
+  'isPrimary': instance.isPrimary,
+  'pictureLikeStatus': instance.pictureLikeStatus,
 };
 
-ProfilePicture _$ProfilePictureFromJson(Map<String, dynamic> json) =>
-    ProfilePicture(
-      id: (json['id'] as num).toInt(),
-      imageUrl: ProfilePicture._decodeUrl(json['imageUrl'] as String),
-      order: (json['order'] as num).toInt(),
-    );
+ProfileTagSummary _$ProfileTagSummaryFromJson(Map<String, dynamic> json) => ProfileTagSummary(id: (json['id'] as num).toInt(), name: json['name'] as String?, category: json['category'] as String?);
 
-Map<String, dynamic> _$ProfilePictureToJson(ProfilePicture instance) =>
-    <String, dynamic>{
-      'id': instance.id,
-      'imageUrl': instance.imageUrl,
-      'order': instance.order,
-    };
+Map<String, dynamic> _$ProfileTagSummaryToJson(ProfileTagSummary instance) => <String, dynamic>{'id': instance.id, 'name': instance.name, 'category': instance.category};

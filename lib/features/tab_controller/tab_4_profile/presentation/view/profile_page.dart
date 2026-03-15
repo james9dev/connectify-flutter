@@ -139,7 +139,7 @@ class _ProfileInfoState extends State<_ProfileInfoView> {
 
   @override
   Widget build(BuildContext context) {
-    final pictures = member.profile.pictures;
+    final pictures = member.profile.orderedPictures;
     final currentIndex = pictures.isEmpty ? 0 : (current >= pictures.length ? pictures.length - 1 : current);
     final currentPosition = pictures.isEmpty ? 0.0 : currentIndex.toDouble();
 

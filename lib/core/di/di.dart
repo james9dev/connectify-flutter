@@ -5,6 +5,8 @@ import 'package:connectify/features/sign/data/sign_client.dart';
 import 'package:connectify/features/sign/data/sign_repository_impl.dart';
 import 'package:connectify/features/sign/domain/sign_repository.dart';
 import 'package:connectify/features/tab_controller/tab_1_explore/domain/member_repository.dart';
+import 'package:connectify/features/tab_controller/tab_2_liked/data/liked_repository_impl.dart';
+import 'package:connectify/features/tab_controller/tab_2_liked/domain/liked_repository.dart';
 import 'package:connectify/features/tab_controller/tab_4_profile/domain/profile_repository.dart';
 import 'package:get_it/get_it.dart';
 
@@ -24,6 +26,7 @@ void setupDI() {
 
   // Member
   getIt.registerLazySingleton<MemberClient>(() => MemberClient(getIt<ApiClient>()));
+  getIt.registerLazySingleton<LikedRepository>(() => LikedRepositoryImpl(getIt<ApiClient>()));
   getIt.registerLazySingleton<MemberRepositoryImpl>(() => MemberRepositoryImpl(getIt<MemberClient>()));
   getIt.registerLazySingleton<MemberRepository>(() => getIt<MemberRepositoryImpl>());
   getIt.registerLazySingleton<ProfileRepository>(() => getIt<MemberRepositoryImpl>());

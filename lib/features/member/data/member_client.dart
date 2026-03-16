@@ -220,26 +220,6 @@ class MemberClient {
     }
   }
 
-  List<Member> _parseMemberList(Object? json) {
-    if (json is! List) {
-      return const <Member>[];
-    }
-
-    final members = <Member>[];
-    for (final element in json) {
-      if (element is Map<String, dynamic>) {
-        members.add(Member.fromJson(element));
-        continue;
-      }
-
-      if (element is Map) {
-        members.add(Member.fromJson(element.map((key, value) => MapEntry('$key', value))));
-      }
-    }
-
-    return members;
-  }
-
   Map<String, dynamic> _decodeJsonObject(String body) {
     if (body.isEmpty) {
       return {};

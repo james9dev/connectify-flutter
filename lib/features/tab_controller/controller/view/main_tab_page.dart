@@ -1,6 +1,6 @@
-import 'package:connectify/features/tab_controller/tab_3_notifications/notifications_page.dart';
+import 'package:connectify/features/tab_controller/tab_3_chats/chats_page.dart';
 import 'package:connectify/features/tab_controller/tab_4_profile/presentation/view/profile_page.dart';
-import 'package:connectify/features/tab_controller/tab_2_search/search_page.dart';
+import 'package:connectify/features/tab_controller/tab_2_liked/liked_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -32,7 +32,7 @@ class MainTabView extends StatelessWidget {
   Widget build(BuildContext context) {
     final selectedTab = context.select((MainTabCubit cubit) => cubit.state.tab);
 
-    final tabChildren = [ExplorePage(), NotificationsPage(), SearchPage(), ProfilePage()];
+    final tabChildren = [ExplorePage(), LikedPage(), ChatsPage(), ProfilePage()];
 
     return Scaffold(
       body: IndexedStack(index: selectedTab.index, children: tabChildren),
@@ -51,8 +51,8 @@ class MainTabView extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             _HomeTabButton(groupValue: selectedTab, value: MainTab.home, icon: const Icon(Icons.list_rounded)),
-            _HomeTabButton(groupValue: selectedTab, value: MainTab.search, icon: const Icon(Icons.show_chart_rounded)),
-            _HomeTabButton(groupValue: selectedTab, value: MainTab.notifications, icon: const Icon(Icons.notifications)),
+            _HomeTabButton(groupValue: selectedTab, value: MainTab.liked, icon: const Icon(Icons.show_chart_rounded)),
+            _HomeTabButton(groupValue: selectedTab, value: MainTab.chats, icon: const Icon(Icons.notifications)),
             _HomeTabButton(groupValue: selectedTab, value: MainTab.profile, icon: const Icon(Icons.people)),
           ],
         ),

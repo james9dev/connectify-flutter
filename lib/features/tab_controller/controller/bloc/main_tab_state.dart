@@ -1,6 +1,6 @@
 part of 'main_tab_cubit.dart';
 
-enum MainTab { home, search, notifications, profile }
+enum MainTab { home, liked, chats, profile }
 
 final class MainTabState extends Equatable {
   const MainTabState({this.tab = MainTab.home});

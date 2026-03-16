@@ -138,3 +138,40 @@
 - 권장 참조 파일 예시:
 - 기획: `기획서_mvp_v0.1.md`, `화면정의서_mvp_v0.1.md`, `기능 개요.md`, `profile_tags.md`
 - 서버: `../../API_server_v2/README.md`, `../../API_server_v2/docs/`, `../../API_server_v2/src/`
+
+## 12) 아키텍처 및 폴더 규칙 (Flutter App 표준)
+- 아키텍처 원칙:
+- 본 앱은 `Feature + Shared + Core` 혼합 구조를 기본으로 한다.
+- 의존 방향은 `presentation -> domain -> data -> core`로 단방향 유지한다.
+- `shared`는 전역 인증/공통 모델/공통 상태만 둔다. (기능 전용 로직 금지)
+- `core`는 DI, 네트워크, 공통 DTO, 에러/유틸만 둔다.
+
+- 폴더 배치 원칙:
+- 기능 코드는 `lib/features/<feature>/` 하위에 배치한다.
+- 각 feature는 가능하면 `data`, `domain`, `presentation` 3계층을 유지한다.
+- Bloc은 `presentation/bloc`, 화면은 `presentation/view`(또는 `views`)로 통일한다.
+- 탭별 기능은 `features/tab_controller/tab_x_<name>/` 네이밍을 유지한다.
+- 공통 모델은 `lib/shared/models`, 전역 인증은 `lib/shared/authentication`에만 위치시킨다.
+
+- 파일 네이밍 원칙:
+- API 호출: `*_client.dart`
+- 저장소 구현: `*_repository_impl.dart`
+- 추상 저장소: `domain/*_repository.dart`
+- 상태관리: `*_bloc.dart`, `*_event.dart`, `*_state.dart`
+- 화면: `*_page.dart`, 재사용 UI 조각: `*_form.dart`, `*_view.dart`
+
+- DI/생명주기 규칙:
+- DI 등록은 `lib/core/di/di.dart` 단일 진입점에서 관리한다.
+- `setupDI()`는 idempotent 유지한다.
+- 화면/Bloc에서 구현체 직접 생성 금지, 인터페이스 주입 우선.
+- 전역 상태(Auth 등)는 앱 루트에서만 생성하고 하위로 전달한다.
+
+- 금지 규칙:
+- Feature 간 내부 구현 직접 참조 금지 (인터페이스 통해 접근)
+- `presentation` 계층에서 `http` 직접 호출 금지
+- 토큰/민감정보 로그 출력 금지
+- 임시 주석 코드/미사용 파일 커밋 금지
+
+- 변경 체크 규칙:
+- 새 기능 추가 시: 폴더 생성 -> domain 계약 -> data 구현 -> bloc/state -> view 순서로 작업
+- API 변경 시: 서버 근거 경로 + Flutter 변경 파일을 함께 기록

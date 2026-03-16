@@ -8,6 +8,8 @@ abstract class ProfileRepository {
 
   Future<Member> deleteProfilePhoto({required int pictureId});
 
+  Future<Member> reorderProfilePhoto({required int pictureId, required int targetOrder});
+
   Future<ProfileTagCatalog> getProfileTagCatalog();
 
   Future<void> updateProfileBasicInfo({

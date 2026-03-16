@@ -66,6 +66,25 @@ class ApiClient {
     }
   }
 
+  Future<http.Response> patch(String path, {Map<String, dynamic>? body}) async {
+    final url = _buildUri(path);
+    final headers = await _defaultHeaders();
+    final encodedBody = jsonEncode(body);
+    try {
+      final response = await _client.patch(url, headers: headers, body: encodedBody);
+      _logResponse('PATCH', url, headers, encodedBody, response);
+
+      if (response.statusCode >= 400) {
+        _logHttpError('PATCH', url, response);
+      }
+
+      return response;
+    } catch (error, stackTrace) {
+      _logException('PATCH', url, error, stackTrace);
+      rethrow;
+    }
+  }
+
   Future<http.Response> delete(String path) async {
     final url = _buildUri(path);
     final headers = await _defaultHeaders();

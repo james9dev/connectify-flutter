@@ -100,6 +100,17 @@ class MemberClient {
     throw MemberClientException(resultDto.message);
   }
 
+  Future<void> reorderProfilePhoto({required int pictureId, required int order}) async {
+    final response = await _apiClient.patch('/profile/photos/$pictureId/order', body: {'order': order});
+    final resultDto = _parseResultDto<Object?>(response, (json) => json);
+
+    if (response.statusCode >= 200 && response.statusCode < 300 && resultDto.success()) {
+      return;
+    }
+
+    throw MemberClientException(resultDto.message);
+  }
+
   Future<void> likeProfilePhoto({required int pictureId}) async {
     final response = await _apiClient.post('/profile/photos/$pictureId/like');
     final resultDto = _parseResultDto<Object?>(response, (json) => json);
@@ -207,6 +218,26 @@ class MemberClient {
     } catch (_) {
       throw MemberClientException(_extractFallbackMessage(payload, response.statusCode));
     }
+  }
+
+  List<Member> _parseMemberList(Object? json) {
+    if (json is! List) {
+      return const <Member>[];
+    }
+
+    final members = <Member>[];
+    for (final element in json) {
+      if (element is Map<String, dynamic>) {
+        members.add(Member.fromJson(element));
+        continue;
+      }
+
+      if (element is Map) {
+        members.add(Member.fromJson(element.map((key, value) => MapEntry('$key', value))));
+      }
+    }
+
+    return members;
   }
 
   Map<String, dynamic> _decodeJsonObject(String body) {

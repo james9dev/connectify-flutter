@@ -93,6 +93,23 @@ class MemberRepositoryImpl implements MemberRepository, ProfileRepository, Profi
   }
 
   @override
+  Future<Member> reorderProfilePhoto({required int pictureId, required int targetOrder}) async {
+    final currentMember = await _memberClient.getUser();
+    if (currentMember == null) {
+      throw MemberClientException('프로필 정보를 찾지 못했습니다. 잠시 후 다시 시도해주세요.');
+    }
+
+    await _memberClient.reorderProfilePhoto(pictureId: pictureId, order: targetOrder);
+
+    final refreshedMember = await _memberClient.getUser();
+    if (refreshedMember != null) {
+      return refreshedMember;
+    }
+
+    return currentMember;
+  }
+
+  @override
   Future<ProfileTagCatalog> getProfileTagCatalog() {
     return _memberClient.getProfileTagCatalog();
   }

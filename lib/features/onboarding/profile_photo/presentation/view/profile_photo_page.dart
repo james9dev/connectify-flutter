@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:connectify/features/onboarding/profile_basic/domain/entities/profile_basic_info_command.dart';
 import 'package:connectify/features/onboarding/profile_photo/domain/entities/profile_photo_draft.dart';
@@ -7,9 +6,10 @@ import 'package:connectify/features/onboarding/profile_photo/domain/profile_phot
 import 'package:connectify/features/onboarding/profile_photo/presentation/bloc/profile_photo_bloc.dart';
 import 'package:connectify/features/onboarding/profile_photo/presentation/bloc/profile_photo_event.dart';
 import 'package:connectify/features/onboarding/profile_photo/presentation/bloc/profile_photo_state.dart';
+import 'package:connectify/features/onboarding/profile_photo/presentation/widgets/profile_photo_mosaic_layout.dart';
+import 'package:connectify/features/onboarding/profile_photo/presentation/widgets/profile_photo_picker_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 
 class ProfilePhotoPage extends StatefulWidget {
@@ -79,8 +79,16 @@ class _ProfilePhotoPageState extends State<ProfilePhotoPage> {
                       style: TextStyle(fontSize: 15, color: Colors.black54, fontWeight: FontWeight.w600),
                     ),
                     const SizedBox(height: 20),
-                    _PhotoMosaicLayout(
-                      draftPhotos: state.draftPhotos,
+                    ProfilePhotoMosaicLayout<ProfilePhotoDraft>(
+                      photos: state.draftPhotos,
+                      imageBuilder: (context, picture) {
+                        return Image.memory(
+                          picture.bytes,
+                          fit: BoxFit.cover,
+                          gaplessPlayback: true,
+                          errorBuilder: (context, _, _) => const ColoredBox(color: Color(0xFFFFE9A3), child: Icon(Icons.broken_image_outlined)),
+                        );
+                      },
                       onAddPressed: state.isSubmitting ? null : () => _pickAndStagePhoto(state.draftPhotos.length),
                       onDeletePressed: state.isSubmitting ? null : (index) => _confirmDeletePhoto(index),
                     ),
@@ -128,7 +136,7 @@ class _ProfilePhotoPageState extends State<ProfilePhotoPage> {
         return;
       }
 
-      final cropped = await _cropImageToFourByFive(picked.path);
+      final cropped = await ProfilePhotoPickerHelper.cropImageToFourByFive(picked.path);
       if (!mounted || cropped == null) {
         return;
       }
@@ -143,7 +151,7 @@ class _ProfilePhotoPageState extends State<ProfilePhotoPage> {
         return;
       }
 
-      await _validateImage(bytes);
+      await ProfilePhotoPickerHelper.validateImageBytes(bytes);
       if (!mounted) {
         return;
       }
@@ -160,35 +168,6 @@ class _ProfilePhotoPageState extends State<ProfilePhotoPage> {
 
       final message = '$error';
       _showSnackBar(message.startsWith('Exception: ') ? message.replaceFirst('Exception: ', '') : '사진 선택 중 오류가 발생했습니다.');
-    }
-  }
-
-  Future<CroppedFile?> _cropImageToFourByFive(String sourcePath) {
-    return ImageCropper().cropImage(
-      sourcePath: sourcePath,
-      aspectRatio: const CropAspectRatio(ratioX: 4, ratioY: 5),
-      compressFormat: ImageCompressFormat.jpg,
-      compressQuality: 92,
-      maxWidth: 1080,
-      maxHeight: 1350,
-      uiSettings: [
-        AndroidUiSettings(toolbarTitle: '사진 자르기', toolbarColor: const Color(0xFFFFC629), toolbarWidgetColor: Colors.black, initAspectRatio: CropAspectRatioPreset.original, lockAspectRatio: true),
-        IOSUiSettings(title: '사진 자르기', aspectRatioLockEnabled: true, resetAspectRatioEnabled: false),
-      ],
-    );
-  }
-
-  Future<void> _validateImage(List<int> bytes) async {
-    final image = await decodeImageFromList(Uint8List.fromList(bytes));
-
-    if (image.width < 320 || image.height < 320) {
-      throw Exception('사진의 최소 해상도는 320px 이상이어야 합니다.');
-    }
-
-    final ratio = image.width / image.height;
-    const targetRatio = 4 / 5;
-    if ((ratio - targetRatio).abs() > 0.08) {
-      throw Exception('사진 비율은 4:5에 맞춰주세요.');
     }
   }
 
@@ -229,178 +208,5 @@ class _ProfilePhotoPageState extends State<ProfilePhotoPage> {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(content: Text(message)));
-  }
-}
-
-class _PhotoMosaicLayout extends StatelessWidget {
-  const _PhotoMosaicLayout({required this.draftPhotos, required this.onAddPressed, required this.onDeletePressed});
-
-  final List<ProfilePhotoDraft> draftPhotos;
-  final VoidCallback? onAddPressed;
-  final ValueChanged<int>? onDeletePressed;
-
-  static const double _gap = 10;
-  static const Map<int, Offset> _thumbnailGrid = <int, Offset>{1: Offset(2, 0), 2: Offset(2, 1), 3: Offset(0, 2), 4: Offset(1, 2), 5: Offset(2, 2)};
-
-  @override
-  Widget build(BuildContext context) {
-    final representative = draftPhotos.isNotEmpty ? draftPhotos.first : null;
-
-    return AspectRatio(
-      aspectRatio: 1,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final cell = (constraints.maxWidth - (_gap * 2)) / 3;
-          final representativeSize = (cell * 2) + _gap;
-
-          return Stack(
-            children: [
-              Positioned(
-                left: 0,
-                top: 0,
-                width: representativeSize,
-                height: representativeSize,
-                child: _HeroPhotoCard(picture: representative, onAddPressed: onAddPressed, onDeletePressed: representative == null || onDeletePressed == null ? null : () => onDeletePressed!(0)),
-              ),
-              ..._thumbnailGrid.entries.map((entry) {
-                final photoIndex = entry.key;
-                final col = entry.value.dx;
-                final row = entry.value.dy;
-
-                return Positioned(left: col * (cell + _gap), top: row * (cell + _gap), width: cell, height: cell, child: _buildThumbnailSlot(photoIndex));
-              }),
-            ],
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildThumbnailSlot(int index) {
-    if (index < draftPhotos.length) {
-      final picture = draftPhotos[index];
-      return _PhotoSlotFilled(picture: picture, onDelete: onDeletePressed == null ? null : () => onDeletePressed!(index));
-    }
-
-    return _PhotoSlotEmpty(onTap: onAddPressed);
-  }
-}
-
-class _HeroPhotoCard extends StatelessWidget {
-  const _HeroPhotoCard({required this.picture, required this.onAddPressed, required this.onDeletePressed});
-
-  final ProfilePhotoDraft? picture;
-  final VoidCallback? onAddPressed;
-  final VoidCallback? onDeletePressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: const Color(0xFFFFE36D),
-      borderRadius: BorderRadius.circular(16),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: picture == null ? onAddPressed : null,
-        borderRadius: BorderRadius.circular(16),
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            if (picture == null)
-              const ColoredBox(
-                color: Color(0xFFFFE36D),
-                child: Center(child: Icon(Icons.add_a_photo_rounded, size: 56, color: Colors.black87)),
-              )
-            else
-              Image.memory(
-                picture!.bytes,
-                fit: BoxFit.cover,
-                gaplessPlayback: true,
-                errorBuilder: (context, _, _) => const ColoredBox(
-                  color: Color(0xFFFFE36D),
-                  child: Center(child: Icon(Icons.broken_image_outlined, size: 40)),
-                ),
-              ),
-            Positioned(
-              top: 12,
-              left: 12,
-              child: DecoratedBox(
-                decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.64), borderRadius: BorderRadius.circular(999)),
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  child: Text(
-                    '대표 사진',
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12),
-                  ),
-                ),
-              ),
-            ),
-            if (picture != null)
-              Positioned(
-                top: 4,
-                right: 4,
-                child: IconButton.filledTonal(
-                  onPressed: onDeletePressed,
-                  style: IconButton.styleFrom(backgroundColor: Colors.white.withValues(alpha: 0.86), foregroundColor: Colors.black87, visualDensity: VisualDensity.compact),
-                  icon: const Icon(Icons.close, size: 18),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _PhotoSlotFilled extends StatelessWidget {
-  const _PhotoSlotFilled({required this.picture, required this.onDelete});
-
-  final ProfilePhotoDraft picture;
-  final VoidCallback? onDelete;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      borderRadius: BorderRadius.circular(16),
-      clipBehavior: Clip.antiAlias,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          Image.memory(
-            picture.bytes,
-            fit: BoxFit.cover,
-            gaplessPlayback: true,
-            errorBuilder: (context, _, _) => const ColoredBox(color: Color(0xFFFFE9A3), child: Icon(Icons.broken_image_outlined)),
-          ),
-          Positioned(
-            top: 4,
-            right: 4,
-            child: IconButton.filledTonal(
-              onPressed: onDelete,
-              style: IconButton.styleFrom(backgroundColor: Colors.white.withValues(alpha: 0.86), foregroundColor: Colors.black87, visualDensity: VisualDensity.compact),
-              icon: const Icon(Icons.close, size: 18),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _PhotoSlotEmpty extends StatelessWidget {
-  const _PhotoSlotEmpty({required this.onTap});
-
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: const Color(0xFFFFE9A3),
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: const Center(child: Icon(Icons.add, size: 34, color: Colors.black54)),
-      ),
-    );
   }
 }

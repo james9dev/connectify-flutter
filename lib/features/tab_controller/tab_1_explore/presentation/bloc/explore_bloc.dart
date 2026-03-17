@@ -125,12 +125,12 @@ class ExploreBloc extends Bloc<ExploreEvent, ExploreState> {
 
   void _onMatchRequestPressed(MatchRequestPressed event, Emitter<ExploreState> emit) {
     if (state.requestedMatchMemberIds.contains(event.memberId)) {
-      emit(state.copyWith(noticeMessage: '이미 매칭 요청을 보낸 회원입니다.'));
+      emit(state.copyWith(noticeMessage: '이미 데이트 요청을 보낸 회원입니다.'));
       return;
     }
 
     final nextRequested = <int>{...state.requestedMatchMemberIds, event.memberId};
-    emit(state.copyWith(requestedMatchMemberIds: nextRequested, noticeMessage: '매칭 요청을 보냈어요.'));
+    emit(state.copyWith(requestedMatchMemberIds: nextRequested, noticeMessage: '데이트 요청을 보냈어요.'));
   }
 
   void _onMemberReported(MemberReported event, Emitter<ExploreState> emit) {

@@ -12,6 +12,8 @@ import 'package:connectify/features/tab_controller/tab_3_chats/domain/chat_repos
 import 'package:connectify/features/tab_controller/tab_4_profile/domain/profile_repository.dart';
 import 'package:get_it/get_it.dart';
 
+import '../push/firebase_push_token_manager.dart';
+import '../push/push_token_manager.dart';
 import '../network/api_client.dart';
 import '../network/token_storage.dart';
 
@@ -25,6 +27,7 @@ void setupDI() {
   // Core
   getIt.registerLazySingleton<TokenStorage>(() => TokenStorage());
   getIt.registerLazySingleton<ApiClient>(() => ApiClient(tokenStorage: getIt<TokenStorage>()));
+  getIt.registerLazySingleton<PushTokenManager>(() => FirebasePushTokenManager(apiClient: getIt<ApiClient>()));
 
   // Member
   getIt.registerLazySingleton<MemberClient>(() => MemberClient(getIt<ApiClient>()));

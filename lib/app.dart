@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:connectify/features/onboarding/profile_basic/presentation/view/profile_basic_info_page.dart';
 import 'package:connectify/features/onboarding/profile_photo/data/profile_photo_repository_impl.dart';
 import 'package:connectify/features/onboarding/profile_photo/domain/profile_photo_repository.dart';
+import 'package:connectify/core/push/push_token_manager.dart';
 import 'package:connectify/features/sign/domain/sign_repository.dart';
 import 'package:connectify/features/onboarding/profile_basic/domain/profile_basic_repository.dart';
 import 'package:connectify/shared/authentication/bloc/authentication_bloc.dart';
@@ -24,7 +27,7 @@ class App extends StatelessWidget {
     return MultiRepositoryProvider(
       providers: [
         RepositoryProvider(
-          create: (_) => AuthenticationRepository(tokenStorage: getIt<TokenStorage>()),
+          create: (_) => AuthenticationRepository(tokenStorage: getIt<TokenStorage>(), pushTokenManager: getIt<PushTokenManager>()),
           dispose: (repository) => repository.dispose(),
         ),
         RepositoryProvider<SignRepository>(create: (_) => getIt<SignRepository>()),
@@ -57,8 +60,38 @@ class AppView extends StatefulWidget {
 
 class _AppViewState extends State<AppView> {
   final _navigatorKey = GlobalKey<NavigatorState>();
+  StreamSubscription<PushMessageEvent>? _pushMessageSubscription;
 
   NavigatorState get _navigator => _navigatorKey.currentState!;
+
+  @override
+  void initState() {
+    super.initState();
+    _pushMessageSubscription = getIt<PushTokenManager>().messages.listen(_onPushMessageReceived);
+  }
+
+  @override
+  void dispose() {
+    _pushMessageSubscription?.cancel();
+    super.dispose();
+  }
+
+  void _onPushMessageReceived(PushMessageEvent event) {
+    final context = _navigatorKey.currentContext;
+    if (context == null) {
+      return;
+    }
+
+    final title = event.title?.trim() ?? '';
+    final body = event.body?.trim() ?? '';
+    final fallback = event.openedApp ? '푸시 알림을 통해 이동했습니다.' : '새로운 알림이 도착했습니다.';
+    final message = [title, body].where((value) => value.isNotEmpty).join('\n');
+    final displayText = message.isEmpty ? fallback : message;
+
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(displayText)));
+  }
 
   @override
   Widget build(BuildContext context) {

@@ -20,6 +20,7 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
     on<LoginPasswordChanged>(_onPasswordChanged);
     on<LoginSubmitted>(_onSubmitted);
     on<KakaoSignClicked>(_onKakaoSignClicked);
+    on<TestAccountLoginRequested>(_onTestAccountLoginRequested);
   }
 
   final AuthenticationRepository _authenticationRepository;
@@ -55,6 +56,24 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
       return;
     }
 
+    await _loginWithKakaoAccessToken(kakaoToken, emit);
+  }
+
+  Future<void> _onTestAccountLoginRequested(TestAccountLoginRequested event, Emitter<LoginState> emit) async {
+    emit(state.copyWith(status: FormzSubmissionStatus.inProgress));
+
+    try {
+      final authToken = await _signRepository.tmpLoginKakao(event.providerId);
+      await _authenticationRepository.logIn(accessToken: authToken.accessToken, requireProfileSetup: false);
+      emit(state.copyWith(status: FormzSubmissionStatus.success));
+    } on SignRepositoryException {
+      emit(state.copyWith(status: FormzSubmissionStatus.failure));
+    } catch (_) {
+      emit(state.copyWith(status: FormzSubmissionStatus.failure));
+    }
+  }
+
+  Future<void> _loginWithKakaoAccessToken(String kakaoToken, Emitter<LoginState> emit) async {
     emit(state.copyWith(status: FormzSubmissionStatus.inProgress));
 
     try {

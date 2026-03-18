@@ -17,6 +17,15 @@ class SignRepositoryImpl extends SignRepository {
   }
 
   @override
+  Future<AuthTokenDto> tmpLoginKakao(int providerId) async {
+    try {
+      return await _signClient.tmpLoginKakao(providerId);
+    } on SignClientException catch (error) {
+      throw SignRepositoryException(error.message, statusCode: error.statusCode);
+    }
+  }
+
+  @override
   Future<AuthTokenDto> registerKakao(String kakaoToken) async {
     try {
       return await _signClient.registerKakao(kakaoToken);

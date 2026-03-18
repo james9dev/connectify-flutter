@@ -3,6 +3,8 @@ import 'package:connectify/shared/models/auth_token_dto.dart';
 abstract class SignRepository {
   Future<AuthTokenDto> loginKakao(String kakaoToken);
 
+  Future<AuthTokenDto> tmpLoginKakao(int providerId);
+
   Future<AuthTokenDto> registerKakao(String kakaoToken);
 }
 

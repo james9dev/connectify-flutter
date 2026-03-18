@@ -19,6 +19,17 @@ class SignClient {
     return _requestKakaoAuth(path: '/member/sign/kakao/register', kakaoAccessToken: kakaoAccessToken);
   }
 
+  Future<AuthTokenDto> tmpLoginKakao(int providerId) async {
+    final response = await _apiClient.post('/member/sign/kakao/login-tmp', body: {'providerId': providerId});
+    final resultDto = _parseResultDto<AuthTokenDto>(response, (data) => AuthTokenDto.fromJson(data as Map<String, dynamic>));
+
+    if (response.statusCode >= 200 && response.statusCode < 300 && resultDto.success() && resultDto.data != null) {
+      return resultDto.data!;
+    }
+
+    throw SignClientException(resultDto.message, statusCode: response.statusCode);
+  }
+
   Future<AuthTokenDto> _requestKakaoAuth({required String path, required String kakaoAccessToken}) async {
     final response = await _apiClient.post(path, body: {'idToken': '', 'accessToken': kakaoAccessToken, 'tokenType': 'Bearer'});
     final resultDto = _parseResultDto<AuthTokenDto>(response, (data) => AuthTokenDto.fromJson(data as Map<String, dynamic>));

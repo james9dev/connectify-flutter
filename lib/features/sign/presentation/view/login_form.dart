@@ -44,11 +44,61 @@ class LoginForm extends StatelessWidget {
             ),
             const SizedBox(height: 18),
             const _KakaoButton(),
+            const SizedBox(height: 16),
+            const _TestAccountButtons(),
           ],
         ),
       ),
     );
   }
+}
+
+class _TestAccountButtons extends StatelessWidget {
+  const _TestAccountButtons();
+
+  static const _accounts = <_TestAccount>[_TestAccount(providerId: 10001, label: '테스트 계정 1'), _TestAccount(providerId: 10002, label: '테스트 계정 2')];
+
+  @override
+  Widget build(BuildContext context) {
+    final isLoading = context.select((LoginBloc bloc) => bloc.state.status.isInProgress);
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF8D9),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFFFE8A3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Text(
+            '임시 테스트 로그인',
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Colors.black87),
+          ),
+          const SizedBox(height: 8),
+          for (final account in _accounts) ...[
+            OutlinedButton(
+              onPressed: isLoading
+                  ? null
+                  : () {
+                      context.read<LoginBloc>().add(TestAccountLoginRequested(providerId: account.providerId));
+                    },
+              child: Text('${account.label} (provider_id: ${account.providerId})'),
+            ),
+            if (account != _accounts.last) const SizedBox(height: 8),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _TestAccount {
+  const _TestAccount({required this.providerId, required this.label});
+
+  final int providerId;
+  final String label;
 }
 
 class _KakaoButton extends StatelessWidget {

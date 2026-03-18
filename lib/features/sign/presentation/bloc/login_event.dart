@@ -32,3 +32,12 @@ final class LoginSubmitted extends LoginEvent {
 final class KakaoSignClicked extends LoginEvent {
   const KakaoSignClicked();
 }
+
+final class TestAccountLoginRequested extends LoginEvent {
+  const TestAccountLoginRequested({required this.providerId});
+
+  final int providerId;
+
+  @override
+  List<Object> get props => [providerId];
+}

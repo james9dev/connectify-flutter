@@ -7,5 +7,6 @@ abstract class MemberRepository {
   Future<void> unlikeProfilePhoto({required int pictureId});
   Future<void> likeMember({required int memberId});
   Future<void> cancelMemberLike({required int memberId});
+  Future<int> requestDate({required int receiverMemberId, String? requestMessage});
   //Future<Member?> getProfile();
 }

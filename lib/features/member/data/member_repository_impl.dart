@@ -44,6 +44,11 @@ class MemberRepositoryImpl implements MemberRepository, ProfileRepository, Profi
   }
 
   @override
+  Future<int> requestDate({required int receiverMemberId, String? requestMessage}) {
+    return _memberClient.requestDate(receiverMemberId: receiverMemberId, requestMessage: requestMessage);
+  }
+
+  @override
   Future<Member?> getProfile() async {
     return await _memberClient.getUser();
   }

@@ -155,6 +155,19 @@ class MemberClient {
     throw MemberClientException(resultDto.message);
   }
 
+  Future<int> requestDate({required int receiverMemberId, String? requestMessage}) async {
+    final normalizedMessage = requestMessage?.trim();
+    final body = normalizedMessage == null || normalizedMessage.isEmpty ? <String, dynamic>{} : <String, dynamic>{'requestMessage': normalizedMessage};
+    final response = await _apiClient.post('/match/date-requests/$receiverMemberId', body: body);
+    final resultDto = _parseResultDto<int>(response, _parseIntValue);
+
+    if (response.statusCode >= 200 && response.statusCode < 300 && resultDto.success() && resultDto.data != null) {
+      return resultDto.data!;
+    }
+
+    throw MemberClientException(resultDto.message);
+  }
+
   Future<ProfileTagCatalog> getProfileTagCatalog() async {
     final response = await _apiClient.get('/profile/catalog/tags');
     final resultDto = _parseResultDto<ProfileTagCatalog>(response, (json) => ProfileTagCatalog.fromJson(json as Map<String, dynamic>));
@@ -253,6 +266,16 @@ class MemberClient {
     }
 
     return '요청 처리 중 오류가 발생했습니다. (status: $statusCode)';
+  }
+
+  int _parseIntValue(Object? value) {
+    if (value is int) {
+      return value;
+    }
+    if (value is num) {
+      return value.toInt();
+    }
+    return int.tryParse('$value') ?? 0;
   }
 }
 

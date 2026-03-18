@@ -1,4 +1,4 @@
-import 'package:connectify/features/tab_controller/tab_3_chats/chats_page.dart';
+import 'package:connectify/features/tab_controller/tab_3_chats/presentation/view/chats_page.dart';
 import 'package:connectify/features/tab_controller/tab_4_profile/presentation/view/profile_page.dart';
 import 'package:connectify/features/tab_controller/tab_2_liked/presentation/view/liked_page.dart';
 import 'package:flutter/material.dart';

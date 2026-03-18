@@ -123,14 +123,19 @@ class ExploreBloc extends Bloc<ExploreEvent, ExploreState> {
     }
   }
 
-  void _onMatchRequestPressed(MatchRequestPressed event, Emitter<ExploreState> emit) {
+  Future<void> _onMatchRequestPressed(MatchRequestPressed event, Emitter<ExploreState> emit) async {
     if (state.requestedMatchMemberIds.contains(event.memberId)) {
       emit(state.copyWith(noticeMessage: '이미 데이트 요청을 보낸 회원입니다.'));
       return;
     }
 
-    final nextRequested = <int>{...state.requestedMatchMemberIds, event.memberId};
-    emit(state.copyWith(requestedMatchMemberIds: nextRequested, noticeMessage: '데이트 요청을 보냈어요.'));
+    try {
+      await repository.requestDate(receiverMemberId: event.memberId);
+      final nextRequested = <int>{...state.requestedMatchMemberIds, event.memberId};
+      emit(state.copyWith(requestedMatchMemberIds: nextRequested, noticeMessage: '데이트 요청을 보냈어요.'));
+    } catch (_) {
+      emit(state.copyWith(noticeMessage: '데이트 요청에 실패했습니다.'));
+    }
   }
 
   void _onMemberReported(MemberReported event, Emitter<ExploreState> emit) {

@@ -2,10 +2,10 @@ import 'dart:ui' show lerpDouble;
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:connectify/core/di/di.dart';
+import 'package:connectify/features/member_profile/presentation/view/member_profile_detail_view.dart';
 import 'package:connectify/features/tab_controller/tab_1_explore/domain/member_repository.dart';
 import 'package:connectify/features/tab_controller/tab_1_explore/presentation/bloc/explore_bloc.dart';
 import 'package:connectify/shared/models/member.dart';
-import 'package:dots_indicator/dots_indicator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -312,7 +312,7 @@ class _ProfileList extends StatelessWidget {
   }
 }
 
-class _MemberDetailCard extends StatefulWidget {
+class _MemberDetailCard extends StatelessWidget {
   const _MemberDetailCard({
     super.key,
     required this.member,
@@ -343,391 +343,21 @@ class _MemberDetailCard extends StatefulWidget {
   final ValueChanged<double> onDetailScroll;
 
   @override
-  State<_MemberDetailCard> createState() => _MemberDetailCardState();
-}
-
-class _MemberDetailCardState extends State<_MemberDetailCard> {
-  final PageController _pageController = PageController();
-  int _currentPage = 0;
-
-  @override
-  void didUpdateWidget(covariant _MemberDetailCard oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.member.id != widget.member.id) {
-      _currentPage = 0;
-      if (_pageController.hasClients) {
-        _pageController.jumpToPage(0);
-      }
-    }
-  }
-
-  @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final member = widget.member;
-    final pictures = member.profile.orderedPictures;
-    final pictureCount = pictures.length;
-    final safePage = pictureCount == 0 ? 0 : _currentPage.clamp(0, pictureCount - 1);
-    final currentPicture = pictureCount == 0 ? null : pictures[safePage];
-    final isCurrentPhotoLiked = currentPicture != null && widget.likedPhotoIds.contains(currentPicture.id);
-    final hasExtraInfo = _hasExtraInfo(member);
-
-    return Container(
-      key: ValueKey(member.id),
-      margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-      padding: const EdgeInsets.fromLTRB(14, 14, 14, 18),
-      decoration: BoxDecoration(
-        color: _surface,
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: _line),
-        boxShadow: const [BoxShadow(color: Color(0x24000000), blurRadius: 18, offset: Offset(0, 8))],
-      ),
-      child: NotificationListener<ScrollNotification>(
-        onNotification: (notification) {
-          // 상세 컨텐츠의 세로 스크롤만 상단 축소/확장 트리거로 사용한다.
-          final isVertical = notification.metrics.axis == Axis.vertical;
-          final isRootScrollable = notification.depth == 0;
-          if (!isVertical || !isRootScrollable) {
-            return false;
-          }
-
-          widget.onDetailScroll(notification.metrics.pixels < 0 ? 0 : notification.metrics.pixels);
-          return false;
-        },
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildPhotoCarousel(context, pictures, isCurrentPhotoLiked),
-              const SizedBox(height: 14),
-              Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '${member.name}, ${member.profile.age()}',
-                          style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w900, color: _ink, height: 1.0),
-                        ),
-                        const SizedBox(height: 6),
-                        Row(
-                          children: [
-                            const Icon(Icons.location_on_outlined, size: 16, color: _muted),
-                            const SizedBox(width: 4),
-                            Text(
-                              member.profile.location ?? '지역 미설정',
-                              style: const TextStyle(fontSize: 14, color: _muted, fontWeight: FontWeight.w600),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  PopupMenuButton<String>(
-                    icon: const Icon(Icons.more_horiz),
-                    onSelected: (value) {
-                      if (value == 'report') {
-                        widget.onReportPressed();
-                        return;
-                      }
-                      if (value == 'hide') {
-                        widget.onHidePressed();
-                      }
-                    },
-                    itemBuilder: (context) => const [PopupMenuItem(value: 'report', child: Text('신고')), PopupMenuItem(value: 'hide', child: Text('숨김'))],
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: widget.isMemberLiked ? Colors.redAccent : Colors.black87,
-                        side: BorderSide(color: widget.isMemberLiked ? Colors.redAccent : const Color(0xFFD4CCB1)),
-                        padding: const EdgeInsets.symmetric(vertical: 13),
-                        textStyle: const TextStyle(fontWeight: FontWeight.w700),
-                        backgroundColor: Colors.white,
-                      ),
-                      onPressed: widget.onMemberLikePressed,
-                      icon: Icon(widget.isMemberLiked ? Icons.favorite : Icons.favorite_border),
-                      label: Text(widget.isMemberLiked ? '좋아요 취소' : '회원 좋아요'),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: FilledButton.icon(
-                      style: FilledButton.styleFrom(
-                        backgroundColor: _accentYellow,
-                        foregroundColor: Colors.black,
-                        padding: const EdgeInsets.symmetric(vertical: 13),
-                        textStyle: const TextStyle(fontWeight: FontWeight.w800),
-                      ),
-                      onPressed: widget.isMatchRequested ? null : widget.onMatchRequestPressed,
-                      icon: Icon(widget.isMatchRequested ? Icons.check_circle : Icons.send_outlined),
-                      label: Text(widget.isMatchRequested ? '요청 완료' : '데이트 요청'),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              _buildBioSection(member),
-              if (hasExtraInfo) ...[const SizedBox(height: 14), _buildExtraInfoSection(member)],
-              if (member.profile.profileTagIds.isNotEmpty) ...[
-                const SizedBox(height: 14),
-                _buildTagSection(title: '프로필 태그', tags: member.profile.profileTagIds, backgroundColor: const Color(0xFFFFEEB2)),
-              ],
-              if (member.profile.preferredTagIds.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                _buildTagSection(title: '선호 태그', tags: member.profile.preferredTagIds, backgroundColor: const Color(0xFFE8EEF8)),
-              ],
-              if (widget.detailStatus == ExploreMemberDetailStatus.failure) ...[
-                const SizedBox(height: 10),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton.icon(onPressed: widget.onRetryPressed, icon: const Icon(Icons.refresh), label: const Text('상세 다시 불러오기')),
-                ),
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  bool _hasExtraInfo(Member member) {
-    final profile = member.profile;
-    return profile.job?.trim().isNotEmpty == true ||
-        profile.company?.trim().isNotEmpty == true ||
-        profile.educationInstitution?.trim().isNotEmpty == true ||
-        profile.educationGraduation?.trim().isNotEmpty == true;
-  }
-
-  Widget _buildExtraInfoSection(Member member) {
-    final rows = <({String label, String value})>[];
-    final profile = member.profile;
-
-    if (profile.job?.trim().isNotEmpty == true) {
-      rows.add((label: '직무', value: profile.job!.trim()));
-    }
-    if (profile.company?.trim().isNotEmpty == true) {
-      rows.add((label: '회사', value: profile.company!.trim()));
-    }
-    if (profile.educationInstitution?.trim().isNotEmpty == true) {
-      rows.add((label: '학교', value: profile.educationInstitution!.trim()));
-    }
-    if (profile.educationGraduation?.trim().isNotEmpty == true) {
-      rows.add((label: '학력', value: profile.educationGraduation!.trim()));
-    }
-
-    if (rows.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: _line),
-      ),
-      child: Column(
-        children: rows
-            .map(
-              (row) => Padding(
-                padding: const EdgeInsets.only(bottom: 6),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SizedBox(
-                      width: 56,
-                      child: Text(
-                        row.label,
-                        style: const TextStyle(fontSize: 13, color: _muted, fontWeight: FontWeight.w700),
-                      ),
-                    ),
-                    Expanded(
-                      child: Text(
-                        row.value,
-                        style: const TextStyle(fontSize: 14, color: _ink, fontWeight: FontWeight.w600),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            )
-            .toList(growable: false),
-      ),
-    );
-  }
-
-  Widget _buildBioSection(Member member) {
-    final bio = member.profile.bio?.trim();
-    final hasBio = bio != null && bio.isNotEmpty;
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFF6D4),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFEEDC9D)),
-      ),
-      child: Text(
-        hasBio ? bio : '아직 자기소개를 작성하지 않았어요.',
-        style: const TextStyle(fontSize: 15, color: _ink, height: 1.5, fontWeight: FontWeight.w600),
-      ),
-    );
-  }
-
-  Widget _buildTagSection({required String title, required List<ProfileTagSummary> tags, required Color backgroundColor}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: const TextStyle(fontSize: 13, color: _muted, fontWeight: FontWeight.w700),
-        ),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: tags
-              .map((tag) {
-                final label = tag.name?.trim().isNotEmpty == true ? tag.name! : '태그 #${tag.id}';
-                return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(color: backgroundColor, borderRadius: BorderRadius.circular(999)),
-                  child: Text(
-                    label,
-                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12, color: _ink),
-                  ),
-                );
-              })
-              .toList(growable: false),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildPhotoCarousel(BuildContext context, List<ProfilePicture> pictures, bool isCurrentPhotoLiked) {
-    final pictureCount = pictures.length;
-    final safePage = pictureCount == 0 ? 0 : _currentPage.clamp(0, pictureCount - 1);
-    final indicatorPosition = pictureCount > 0 ? _currentPage.clamp(0, pictureCount - 1).toDouble() : 0.0;
-
-    return SizedBox(
-      height: 388,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(22),
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            if (pictures.isEmpty)
-              const ColoredBox(
-                color: Color(0xFFF0F0ED),
-                child: Center(child: Icon(Icons.image_not_supported_outlined, size: 38, color: Colors.black54)),
-              )
-            else
-              PageView.builder(
-                controller: _pageController,
-                itemCount: pictureCount,
-                onPageChanged: (index) {
-                  setState(() {
-                    _currentPage = index;
-                  });
-                },
-                itemBuilder: (context, index) {
-                  return CachedNetworkImage(
-                    imageUrl: pictures[index].imageUrl,
-                    fit: BoxFit.cover,
-                    placeholder: (context, _) => const ColoredBox(
-                      color: Color(0xFFF0F0ED),
-                      child: Center(child: CircularProgressIndicator()),
-                    ),
-                    errorWidget: (context, _, _) => const ColoredBox(
-                      color: Color(0xFFF0F0ED),
-                      child: Center(child: Icon(Icons.broken_image_outlined, size: 36)),
-                    ),
-                  );
-                },
-              ),
-            if (pictures.isNotEmpty)
-              const Positioned(
-                left: 0,
-                right: 0,
-                bottom: 0,
-                child: IgnorePointer(
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Color(0x00000000), Color(0x70000000)]),
-                    ),
-                    child: SizedBox(height: 110),
-                  ),
-                ),
-              ),
-            if (pictures.isNotEmpty)
-              Positioned(
-                top: 12,
-                right: 12,
-                child: DecoratedBox(
-                  decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.45), borderRadius: BorderRadius.circular(999)),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    child: Text(
-                      '${safePage + 1}/$pictureCount',
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12),
-                    ),
-                  ),
-                ),
-              ),
-            if (pictures.isNotEmpty)
-              Positioned(
-                bottom: 12,
-                right: 12,
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.93),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: isCurrentPhotoLiked ? const Color(0xFFFFC4CF) : const Color(0xFFD9D9D6)),
-                    boxShadow: const [BoxShadow(color: Color(0x26000000), blurRadius: 10, offset: Offset(0, 3))],
-                  ),
-                  child: IconButton(
-                    onPressed: () => widget.onPhotoLikePressed(pictures[safePage].id),
-                    iconSize: 24,
-                    color: isCurrentPhotoLiked ? Colors.redAccent : Colors.black87,
-                    icon: Icon(isCurrentPhotoLiked ? Icons.favorite : Icons.favorite_border),
-                  ),
-                ),
-              ),
-            if (pictures.isNotEmpty)
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 16,
-                child: DotsIndicator(
-                  dotsCount: pictureCount,
-                  position: indicatorPosition,
-                  decorator: const DotsDecorator(
-                    color: Color(0x99FFFFFF),
-                    activeColor: _accentYellow,
-                    size: Size(7, 7),
-                    activeSize: Size(16, 7),
-                    activeShape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(999))),
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
+    return MemberProfileDetailView(
+      key: ValueKey('member-detail-${member.id}'),
+      member: member,
+      isMemberLiked: isMemberLiked,
+      isMatchRequested: isMatchRequested,
+      likedPhotoIds: likedPhotoIds,
+      onMemberLikePressed: onMemberLikePressed,
+      onMatchRequestPressed: onMatchRequestPressed,
+      onPhotoLikePressed: onPhotoLikePressed,
+      onReportPressed: onReportPressed,
+      onHidePressed: onHidePressed,
+      onRetryPressed: onRetryPressed,
+      showRetryAction: detailStatus == ExploreMemberDetailStatus.failure,
+      onDetailScroll: onDetailScroll,
     );
   }
 }
@@ -737,30 +367,40 @@ class _DetailLoadingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      key: const ValueKey('detail-loading'),
-      margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: _surface,
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: _line),
-        boxShadow: const [BoxShadow(color: Color(0x22000000), blurRadius: 14, offset: Offset(0, 6))],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: const [
-          _SkeletonBox(height: 220),
-          SizedBox(height: 16),
-          _SkeletonBox(height: 24, width: 180),
-          SizedBox(height: 8),
-          _SkeletonBox(height: 14, width: 120),
-          SizedBox(height: 16),
-          _SkeletonBox(height: 44),
-          SizedBox(height: 12),
-          _SkeletonBox(height: 64),
-        ],
-      ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: Container(
+              key: const ValueKey('detail-loading'),
+              margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: _surface,
+                borderRadius: BorderRadius.circular(28),
+                border: Border.all(color: _line),
+                boxShadow: const [BoxShadow(color: Color(0x22000000), blurRadius: 14, offset: Offset(0, 6))],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: const [
+                  _SkeletonBox(height: 220),
+                  SizedBox(height: 16),
+                  _SkeletonBox(height: 24, width: 180),
+                  SizedBox(height: 8),
+                  _SkeletonBox(height: 14, width: 120),
+                  SizedBox(height: 16),
+                  _SkeletonBox(height: 44),
+                  SizedBox(height: 12),
+                  _SkeletonBox(height: 64),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

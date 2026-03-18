@@ -27,6 +27,18 @@ class ChatRepositoryImpl implements ChatRepository {
   }
 
   @override
+  Future<void> cancelDateRequest({required int dateRequestId}) async {
+    final response = await _apiClient.patch('/match/date-requests/$dateRequestId/cancel');
+    final resultDto = _parseResultDto<Object?>(response, (json) => json);
+
+    if (_isSuccess(response.statusCode) && resultDto.success()) {
+      return;
+    }
+
+    throw ChatRepositoryException(resultDto.message);
+  }
+
+  @override
   Future<void> acceptDateRequest({required int dateRequestId}) async {
     final response = await _apiClient.patch('/match/date-requests/$dateRequestId/accept');
     final resultDto = _parseResultDto<Object?>(response, (json) => json);

@@ -55,6 +55,15 @@ class DateRequestAcceptedPressed extends ChatsEvent {
   List<Object?> get props => [dateRequestId];
 }
 
+class DateRequestCanceledPressed extends ChatsEvent {
+  const DateRequestCanceledPressed(this.dateRequestId);
+
+  final int dateRequestId;
+
+  @override
+  List<Object?> get props => [dateRequestId];
+}
+
 class DateRequestRejectedPressed extends ChatsEvent {
   const DateRequestRejectedPressed(this.dateRequestId);
 

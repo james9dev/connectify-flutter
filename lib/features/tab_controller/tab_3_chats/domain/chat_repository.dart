@@ -3,6 +3,7 @@ import 'package:connectify/shared/models/member.dart';
 
 abstract class ChatRepository {
   Future<int> requestDate({required int receiverMemberId, String? requestMessage});
+  Future<void> cancelDateRequest({required int dateRequestId});
   Future<void> acceptDateRequest({required int dateRequestId});
   Future<void> rejectDateRequest({required int dateRequestId});
   Future<List<DateRequest>> getSentDateRequests({DateRequestStatus? status, int page = 0, int size = 20});

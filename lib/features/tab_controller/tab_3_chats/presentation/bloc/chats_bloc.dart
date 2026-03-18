@@ -14,6 +14,7 @@ class ChatsBloc extends Bloc<ChatsEvent, ChatsState> {
     on<ReceivedFilterChanged>(_onReceivedFilterChanged);
     on<SentRequestsRefreshRequested>(_onSentRefreshRequested);
     on<ReceivedRequestsRefreshRequested>(_onReceivedRefreshRequested);
+    on<DateRequestCanceledPressed>(_onDateRequestCanceledPressed);
     on<DateRequestAcceptedPressed>(_onDateRequestAcceptedPressed);
     on<DateRequestRejectedPressed>(_onDateRequestRejectedPressed);
     on<ChatsNoticeCleared>(_onNoticeCleared);
@@ -56,6 +57,25 @@ class ChatsBloc extends Bloc<ChatsEvent, ChatsState> {
 
   Future<void> _onReceivedRefreshRequested(ReceivedRequestsRefreshRequested event, Emitter<ChatsState> emit) async {
     await _loadReceivedRequests(emit, forceReload: true);
+  }
+
+  Future<void> _onDateRequestCanceledPressed(DateRequestCanceledPressed event, Emitter<ChatsState> emit) async {
+    if (state.actionInProgressIds.contains(event.dateRequestId)) {
+      return;
+    }
+
+    emit(state.copyWith(actionInProgressIds: <int>{...state.actionInProgressIds, event.dateRequestId}));
+
+    try {
+      await _chatRepository.cancelDateRequest(dateRequestId: event.dateRequestId);
+      emit(state.copyWith(noticeMessage: '보낸 데이트 요청을 취소했어요.'));
+      await _loadSentRequests(emit, forceReload: true);
+    } catch (_) {
+      emit(state.copyWith(noticeMessage: '보낸 데이트 요청 취소에 실패했습니다.'));
+    } finally {
+      final nextActionInProgress = <int>{...state.actionInProgressIds}..remove(event.dateRequestId);
+      emit(state.copyWith(actionInProgressIds: nextActionInProgress));
+    }
   }
 
   Future<void> _onDateRequestAcceptedPressed(DateRequestAcceptedPressed event, Emitter<ChatsState> emit) async {

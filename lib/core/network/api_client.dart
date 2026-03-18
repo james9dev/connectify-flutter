@@ -85,12 +85,13 @@ class ApiClient {
     }
   }
 
-  Future<http.Response> delete(String path) async {
+  Future<http.Response> delete(String path, {Map<String, dynamic>? body}) async {
     final url = _buildUri(path);
     final headers = await _defaultHeaders();
+    final encodedBody = body == null ? null : jsonEncode(body);
     try {
-      final response = await _client.delete(url, headers: headers);
-      _logResponse('DELETE', url, headers, null, response);
+      final response = await _client.delete(url, headers: headers, body: encodedBody);
+      _logResponse('DELETE', url, headers, encodedBody, response);
 
       if (response.statusCode >= 400) {
         _logHttpError('DELETE', url, response);

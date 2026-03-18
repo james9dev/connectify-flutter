@@ -81,6 +81,8 @@ class _ChatsView extends StatelessWidget {
           onRefresh: () async => context.read<ChatsBloc>().add(const SentRequestsRefreshRequested()),
           itemBuilder: (request) => _SentDateRequestCard(
             request: request,
+            isActionInProgress: state.actionInProgressIds.contains(request.id),
+            onCancelPressed: () => context.read<ChatsBloc>().add(DateRequestCanceledPressed(request.id)),
             onTap: () => _openMemberProfilePage(context, memberId: request.receiverMemberId, fallbackName: request.receiverNickName),
           ),
         );
@@ -317,9 +319,11 @@ class _DateRequestFilterTabs extends StatelessWidget {
 }
 
 class _SentDateRequestCard extends StatelessWidget {
-  const _SentDateRequestCard({required this.request, required this.onTap});
+  const _SentDateRequestCard({required this.request, required this.isActionInProgress, required this.onCancelPressed, required this.onTap});
 
   final DateRequest request;
+  final bool isActionInProgress;
+  final VoidCallback onCancelPressed;
   final VoidCallback onTap;
 
   @override
@@ -364,6 +368,16 @@ class _SentDateRequestCard extends StatelessWidget {
                     Text(
                       request.requestMessage!.trim(),
                       style: const TextStyle(fontSize: 12, color: _ink, fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                  if (request.status == DateRequestStatus.requested) ...[
+                    const SizedBox(height: 10),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: OutlinedButton(
+                        onPressed: isActionInProgress ? null : onCancelPressed,
+                        child: isActionInProgress ? const SizedBox(height: 14, width: 14, child: CircularProgressIndicator(strokeWidth: 2)) : const Text('요청 취소'),
+                      ),
                     ),
                   ],
                 ],

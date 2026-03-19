@@ -15,7 +15,7 @@ class MemberProfileDetailPage extends StatefulWidget {
     required this.loadMember,
     required this.fallbackName,
     this.isMemberLiked = false,
-    this.isMatchRequested = false,
+    this.isMatchRequestEnabled = true,
     this.likedPhotoIds = const <int>{},
     this.onMemberLikePressed,
     this.onMatchRequestPressed,
@@ -28,7 +28,7 @@ class MemberProfileDetailPage extends StatefulWidget {
   final MemberProfileLoader loadMember;
   final String fallbackName;
   final bool isMemberLiked;
-  final bool isMatchRequested;
+  final bool isMatchRequestEnabled;
   final Set<int> likedPhotoIds;
   final VoidCallback? onMemberLikePressed;
   final VoidCallback? onMatchRequestPressed;
@@ -106,7 +106,7 @@ class _MemberProfileDetailPageState extends State<MemberProfileDetailPage> {
     return MemberProfileDetailView(
       member: member,
       isMemberLiked: widget.isMemberLiked,
-      isMatchRequested: widget.isMatchRequested,
+      isMatchRequestEnabled: widget.isMatchRequestEnabled,
       likedPhotoIds: widget.likedPhotoIds,
       onMemberLikePressed: widget.onMemberLikePressed,
       onMatchRequestPressed: widget.onMatchRequestPressed,

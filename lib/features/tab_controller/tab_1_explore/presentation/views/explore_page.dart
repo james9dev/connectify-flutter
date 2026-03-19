@@ -16,6 +16,10 @@ const Color _ink = Color(0xFF14130F);
 const Color _muted = Color(0xFF6B675D);
 const Color _line = Color(0xFFE4DCC0);
 
+bool _canRequestDate(MyDateRequestStatus? status) {
+  return status == null || status == MyDateRequestStatus.canceled;
+}
+
 class ExplorePage extends StatelessWidget {
   const ExplorePage({super.key});
 
@@ -150,7 +154,7 @@ class _ExploreViewState extends State<ExploreView> {
       member: selectedMember,
       detailStatus: state.memberDetailStatus,
       isMemberLiked: isMemberLiked,
-      isMatchRequested: state.requestedMatchMemberIds.contains(selectedMember.id),
+      isMatchRequestEnabled: _canRequestDate(selectedMember.profile.myDateRequestStatus),
       likedPhotoIds: likedPhotoIds,
       onMemberLikePressed: () => context.read<ExploreBloc>().add(MemberLikePressed(selectedMember.id)),
       onMatchRequestPressed: () => context.read<ExploreBloc>().add(MatchRequestPressed(selectedMember.id)),
@@ -318,7 +322,7 @@ class _MemberDetailCard extends StatelessWidget {
     required this.member,
     required this.detailStatus,
     required this.isMemberLiked,
-    required this.isMatchRequested,
+    required this.isMatchRequestEnabled,
     required this.likedPhotoIds,
     required this.onMemberLikePressed,
     required this.onMatchRequestPressed,
@@ -332,7 +336,7 @@ class _MemberDetailCard extends StatelessWidget {
   final Member member;
   final ExploreMemberDetailStatus detailStatus;
   final bool isMemberLiked;
-  final bool isMatchRequested;
+  final bool isMatchRequestEnabled;
   final Set<int> likedPhotoIds;
   final VoidCallback onMemberLikePressed;
   final VoidCallback onMatchRequestPressed;
@@ -348,7 +352,7 @@ class _MemberDetailCard extends StatelessWidget {
       key: ValueKey('member-detail-${member.id}'),
       member: member,
       isMemberLiked: isMemberLiked,
-      isMatchRequested: isMatchRequested,
+      isMatchRequestEnabled: isMatchRequestEnabled,
       likedPhotoIds: likedPhotoIds,
       onMemberLikePressed: onMemberLikePressed,
       onMatchRequestPressed: onMatchRequestPressed,

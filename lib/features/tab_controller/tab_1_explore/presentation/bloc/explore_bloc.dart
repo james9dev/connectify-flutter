@@ -124,15 +124,15 @@ class ExploreBloc extends Bloc<ExploreEvent, ExploreState> {
   }
 
   Future<void> _onMatchRequestPressed(MatchRequestPressed event, Emitter<ExploreState> emit) async {
-    if (state.requestedMatchMemberIds.contains(event.memberId)) {
+    if (!_canSendDateRequest(event.memberId)) {
       emit(state.copyWith(noticeMessage: '이미 데이트 요청을 보낸 회원입니다.'));
       return;
     }
 
     try {
       await repository.requestDate(receiverMemberId: event.memberId);
-      final nextRequested = <int>{...state.requestedMatchMemberIds, event.memberId};
-      emit(state.copyWith(requestedMatchMemberIds: nextRequested, noticeMessage: '데이트 요청을 보냈어요.'));
+      final updatedSelected = _updateSelectedDateRequestStatus(memberId: event.memberId, status: MyDateRequestStatus.requested);
+      emit(state.copyWith(selectedMember: updatedSelected, members: _replaceMemberInList(updatedSelected), noticeMessage: '데이트 요청을 보냈어요.'));
     } catch (_) {
       emit(state.copyWith(noticeMessage: '데이트 요청에 실패했습니다.'));
     }
@@ -299,6 +299,30 @@ class ExploreBloc extends Bloc<ExploreEvent, ExploreState> {
     final nextPictures = selected.profile.pictures.map((picture) => picture.id == pictureId ? picture.copyWith(pictureLikeStatus: isLiked) : picture).toList(growable: false);
 
     return selected.copyWith(profile: selected.profile.copyWith(pictures: nextPictures));
+  }
+
+  Member? _updateSelectedDateRequestStatus({required int memberId, required MyDateRequestStatus status}) {
+    final selected = state.selectedMember;
+    if (selected == null || selected.id != memberId) {
+      return selected;
+    }
+
+    return selected.copyWith(profile: selected.profile.copyWith(myDateRequestStatus: status));
+  }
+
+  bool _canSendDateRequest(int memberId) {
+    final status = _findDateRequestStatus(memberId);
+    return status == null || status == MyDateRequestStatus.canceled;
+  }
+
+  MyDateRequestStatus? _findDateRequestStatus(int memberId) {
+    final selected = state.selectedMember;
+    if (selected != null && selected.id == memberId) {
+      return selected.profile.myDateRequestStatus;
+    }
+
+    final cached = _findMemberById(memberId);
+    return cached?.profile.myDateRequestStatus;
   }
 
   List<Member> _replaceMemberInList(Member? updatedMember) {

@@ -68,6 +68,7 @@ Profile _$ProfileFromJson(Map<String, dynamic> json) =>
                 .toList(growable: false) ??
             const <ProfileTagSummary>[],
         memberLikeStatus: json['memberLikeStatus'] as bool? ?? false,
+        myDateRequestStatus: Profile._dateRequestStatusFromJson(json['myDateRequestStatus']),
       )
       ..job = json['job'] as String?
       ..company = json['company'] as String?
@@ -97,6 +98,7 @@ Map<String, dynamic> _$ProfileToJson(Profile instance) => <String, dynamic>{
   'profileTagIds': instance.profileTagIds,
   'preferredTagIds': instance.preferredTagIds,
   'memberLikeStatus': instance.memberLikeStatus,
+  'myDateRequestStatus': Profile._dateRequestStatusToJson(instance.myDateRequestStatus),
 };
 
 const _$GenderTypeEnumMap = {GenderType.MALE: 'MALE', GenderType.FEMALE: 'FEMALE'};

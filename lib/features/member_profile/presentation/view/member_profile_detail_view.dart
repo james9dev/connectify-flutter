@@ -14,7 +14,7 @@ class MemberProfileDetailView extends StatefulWidget {
     super.key,
     required this.member,
     this.isMemberLiked = false,
-    this.isMatchRequested = false,
+    this.isMatchRequestEnabled = true,
     this.likedPhotoIds = const <int>{},
     this.onMemberLikePressed,
     this.onMatchRequestPressed,
@@ -29,7 +29,7 @@ class MemberProfileDetailView extends StatefulWidget {
 
   final Member member;
   final bool isMemberLiked;
-  final bool isMatchRequested;
+  final bool isMatchRequestEnabled;
   final Set<int> likedPhotoIds;
   final VoidCallback? onMemberLikePressed;
   final VoidCallback? onMatchRequestPressed;
@@ -228,13 +228,14 @@ class _MemberProfileDetailViewState extends State<MemberProfileDetailView> {
                 child: FilledButton.icon(
                   style: FilledButton.styleFrom(
                     backgroundColor: _accentYellow,
+                    disabledBackgroundColor: _accentYellow.withValues(alpha: 0.45),
                     foregroundColor: Colors.black,
                     padding: const EdgeInsets.symmetric(vertical: 13),
                     textStyle: const TextStyle(fontWeight: FontWeight.w800),
                   ),
-                  onPressed: widget.isMatchRequested ? null : widget.onMatchRequestPressed,
-                  icon: Icon(widget.isMatchRequested ? Icons.check_circle : Icons.send_outlined),
-                  label: Text(widget.isMatchRequested ? '요청 완료' : '데이트 요청'),
+                  onPressed: widget.isMatchRequestEnabled ? widget.onMatchRequestPressed : null,
+                  icon: const Icon(Icons.send_outlined),
+                  label: const Text('데이트 요청'),
                 ),
               ),
           ],

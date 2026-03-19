@@ -3,6 +3,8 @@ part 'member.g.dart';
 
 enum GenderType { MALE, FEMALE }
 
+enum MyDateRequestStatus { requested, accepted, rejected, canceled }
+
 @JsonSerializable()
 class Member {
   final int id;
@@ -56,6 +58,8 @@ class Profile {
   final List<ProfileTagSummary> preferredTagIds;
   @JsonKey(defaultValue: false)
   final bool memberLikeStatus;
+  @JsonKey(fromJson: _dateRequestStatusFromJson, toJson: _dateRequestStatusToJson)
+  final MyDateRequestStatus? myDateRequestStatus;
 
   Profile({
     required this.id,
@@ -68,6 +72,7 @@ class Profile {
     required this.profileTagIds,
     required this.preferredTagIds,
     required this.memberLikeStatus,
+    this.myDateRequestStatus,
   });
 
   factory Profile.fromJson(Map<String, dynamic> json) => _$ProfileFromJson(json);
@@ -93,6 +98,7 @@ class Profile {
     List<ProfileTagSummary>? profileTagIds,
     List<ProfileTagSummary>? preferredTagIds,
     bool? memberLikeStatus,
+    MyDateRequestStatus? myDateRequestStatus,
   }) {
     final profile = Profile(
       id: id ?? this.id,
@@ -105,6 +111,7 @@ class Profile {
       profileTagIds: profileTagIds ?? this.profileTagIds,
       preferredTagIds: preferredTagIds ?? this.preferredTagIds,
       memberLikeStatus: memberLikeStatus ?? this.memberLikeStatus,
+      myDateRequestStatus: myDateRequestStatus ?? this.myDateRequestStatus,
     );
 
     profile.job = job ?? this.job;
@@ -160,6 +167,42 @@ class Profile {
     }
 
     return age;
+  }
+
+  static MyDateRequestStatus? _dateRequestStatusFromJson(Object? value) {
+    if (value is! String) {
+      return null;
+    }
+
+    switch (value.toUpperCase()) {
+      case 'REQUESTED':
+        return MyDateRequestStatus.requested;
+      case 'ACCEPTED':
+        return MyDateRequestStatus.accepted;
+      case 'REJECTED':
+        return MyDateRequestStatus.rejected;
+      case 'CANCELED':
+        return MyDateRequestStatus.canceled;
+      default:
+        return null;
+    }
+  }
+
+  static String? _dateRequestStatusToJson(MyDateRequestStatus? value) {
+    if (value == null) {
+      return null;
+    }
+
+    switch (value) {
+      case MyDateRequestStatus.requested:
+        return 'REQUESTED';
+      case MyDateRequestStatus.accepted:
+        return 'ACCEPTED';
+      case MyDateRequestStatus.rejected:
+        return 'REJECTED';
+      case MyDateRequestStatus.canceled:
+        return 'CANCELED';
+    }
   }
 }
 

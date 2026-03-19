@@ -11,7 +11,6 @@ class ExploreState extends Equatable {
   final int? selectedMemberId;
   final Member? selectedMember;
   final Set<int> likedMemberIds;
-  final Set<int> requestedMatchMemberIds;
   final Set<int> reportedMemberIds;
   final Set<int> hiddenMemberIds;
   final Map<int, Set<int>> likedPhotoIdsByMember;
@@ -25,7 +24,6 @@ class ExploreState extends Equatable {
     this.selectedMemberId,
     this.selectedMember,
     this.likedMemberIds = const <int>{},
-    this.requestedMatchMemberIds = const <int>{},
     this.reportedMemberIds = const <int>{},
     this.hiddenMemberIds = const <int>{},
     this.likedPhotoIdsByMember = const <int, Set<int>>{},
@@ -39,7 +37,6 @@ class ExploreState extends Equatable {
     Object? selectedMemberId = _unset,
     Object? selectedMember = _unset,
     Set<int>? likedMemberIds,
-    Set<int>? requestedMatchMemberIds,
     Set<int>? reportedMemberIds,
     Set<int>? hiddenMemberIds,
     Map<int, Set<int>>? likedPhotoIdsByMember,
@@ -52,7 +49,6 @@ class ExploreState extends Equatable {
       selectedMemberId: identical(selectedMemberId, _unset) ? this.selectedMemberId : selectedMemberId as int?,
       selectedMember: identical(selectedMember, _unset) ? this.selectedMember : selectedMember as Member?,
       likedMemberIds: likedMemberIds ?? this.likedMemberIds,
-      requestedMatchMemberIds: requestedMatchMemberIds ?? this.requestedMatchMemberIds,
       reportedMemberIds: reportedMemberIds ?? this.reportedMemberIds,
       hiddenMemberIds: hiddenMemberIds ?? this.hiddenMemberIds,
       likedPhotoIdsByMember: likedPhotoIdsByMember ?? this.likedPhotoIdsByMember,
@@ -61,17 +57,5 @@ class ExploreState extends Equatable {
   }
 
   @override
-  List<Object?> get props => [
-    status,
-    memberDetailStatus,
-    members,
-    selectedMemberId,
-    selectedMember,
-    likedMemberIds,
-    requestedMatchMemberIds,
-    reportedMemberIds,
-    hiddenMemberIds,
-    likedPhotoIdsByMember,
-    noticeMessage,
-  ];
+  List<Object?> get props => [status, memberDetailStatus, members, selectedMemberId, selectedMember, likedMemberIds, reportedMemberIds, hiddenMemberIds, likedPhotoIdsByMember, noticeMessage];
 }

@@ -23,6 +23,7 @@ class MemberProfileDetailView extends StatefulWidget {
     this.onHidePressed,
     this.onRetryPressed,
     this.showRetryAction = false,
+    this.onRefresh,
     this.onDetailScroll,
     this.margin = const EdgeInsets.fromLTRB(12, 0, 12, 12),
   });
@@ -38,6 +39,7 @@ class MemberProfileDetailView extends StatefulWidget {
   final VoidCallback? onHidePressed;
   final VoidCallback? onRetryPressed;
   final bool showRetryAction;
+  final RefreshCallback? onRefresh;
   final ValueChanged<double>? onDetailScroll;
   final EdgeInsetsGeometry margin;
 
@@ -77,6 +79,80 @@ class _MemberProfileDetailViewState extends State<MemberProfileDetailView> {
     final hasExtraInfo = _hasExtraInfo(member);
     final title = _memberTitle(member);
 
+    final detailContent = NotificationListener<ScrollNotification>(
+      onNotification: (notification) {
+        final onDetailScroll = widget.onDetailScroll;
+        if (onDetailScroll == null) {
+          return false;
+        }
+
+        final isVertical = notification.metrics.axis == Axis.vertical;
+        final isRootScrollable = notification.depth == 0;
+        if (!isVertical || !isRootScrollable) {
+          return false;
+        }
+
+        onDetailScroll(notification.metrics.pixels < 0 ? 0 : notification.metrics.pixels);
+        return false;
+      },
+      child: SingleChildScrollView(
+        physics: widget.onRefresh == null ? const BouncingScrollPhysics() : const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildPhotoCarousel(context, pictures, isCurrentPhotoLiked),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w900, color: _ink, height: 1.0),
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          const Icon(Icons.location_on_outlined, size: 16, color: _muted),
+                          const SizedBox(width: 4),
+                          Text(
+                            member.profile.location?.trim().isNotEmpty == true ? member.profile.location!.trim() : '지역 미설정',
+                            style: const TextStyle(fontSize: 14, color: _muted, fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                _buildMoreMenu(),
+              ],
+            ),
+            _buildActionButtons(),
+            const SizedBox(height: 16),
+            _buildBioSection(member),
+            if (hasExtraInfo) ...[const SizedBox(height: 14), _buildExtraInfoSection(member)],
+            if (member.profile.profileTagIds.isNotEmpty) ...[
+              const SizedBox(height: 14),
+              _buildTagSection(title: '프로필 태그', tags: member.profile.profileTagIds, backgroundColor: const Color(0xFFFFEEB2)),
+            ],
+            if (member.profile.preferredTagIds.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              _buildTagSection(title: '선호 태그', tags: member.profile.preferredTagIds, backgroundColor: const Color(0xFFE8EEF8)),
+            ],
+            if (widget.showRetryAction && widget.onRetryPressed != null) ...[
+              const SizedBox(height: 10),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton.icon(onPressed: widget.onRetryPressed, icon: const Icon(Icons.refresh), label: const Text('상세 다시 불러오기')),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+
     return Container(
       key: ValueKey(member.id),
       margin: widget.margin,
@@ -87,79 +163,7 @@ class _MemberProfileDetailViewState extends State<MemberProfileDetailView> {
         border: Border.all(color: _line),
         boxShadow: const [BoxShadow(color: Color(0x24000000), blurRadius: 18, offset: Offset(0, 8))],
       ),
-      child: NotificationListener<ScrollNotification>(
-        onNotification: (notification) {
-          final onDetailScroll = widget.onDetailScroll;
-          if (onDetailScroll == null) {
-            return false;
-          }
-
-          final isVertical = notification.metrics.axis == Axis.vertical;
-          final isRootScrollable = notification.depth == 0;
-          if (!isVertical || !isRootScrollable) {
-            return false;
-          }
-
-          onDetailScroll(notification.metrics.pixels < 0 ? 0 : notification.metrics.pixels);
-          return false;
-        },
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildPhotoCarousel(context, pictures, isCurrentPhotoLiked),
-              const SizedBox(height: 14),
-              Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          title,
-                          style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w900, color: _ink, height: 1.0),
-                        ),
-                        const SizedBox(height: 6),
-                        Row(
-                          children: [
-                            const Icon(Icons.location_on_outlined, size: 16, color: _muted),
-                            const SizedBox(width: 4),
-                            Text(
-                              member.profile.location?.trim().isNotEmpty == true ? member.profile.location!.trim() : '지역 미설정',
-                              style: const TextStyle(fontSize: 14, color: _muted, fontWeight: FontWeight.w600),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  _buildMoreMenu(),
-                ],
-              ),
-              _buildActionButtons(),
-              const SizedBox(height: 16),
-              _buildBioSection(member),
-              if (hasExtraInfo) ...[const SizedBox(height: 14), _buildExtraInfoSection(member)],
-              if (member.profile.profileTagIds.isNotEmpty) ...[
-                const SizedBox(height: 14),
-                _buildTagSection(title: '프로필 태그', tags: member.profile.profileTagIds, backgroundColor: const Color(0xFFFFEEB2)),
-              ],
-              if (member.profile.preferredTagIds.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                _buildTagSection(title: '선호 태그', tags: member.profile.preferredTagIds, backgroundColor: const Color(0xFFE8EEF8)),
-              ],
-              if (widget.showRetryAction && widget.onRetryPressed != null) ...[
-                const SizedBox(height: 10),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton.icon(onPressed: widget.onRetryPressed, icon: const Icon(Icons.refresh), label: const Text('상세 다시 불러오기')),
-                ),
-              ],
-            ],
-          ),
-        ),
-      ),
+      child: widget.onRefresh == null ? detailContent : RefreshIndicator(onRefresh: widget.onRefresh!, child: detailContent),
     );
   }
 
@@ -228,7 +232,7 @@ class _MemberProfileDetailViewState extends State<MemberProfileDetailView> {
                 child: FilledButton.icon(
                   style: FilledButton.styleFrom(
                     backgroundColor: _accentYellow,
-                    disabledBackgroundColor: _accentYellow.withValues(alpha: 0.45),
+                    disabledBackgroundColor: const Color.fromARGB(255, 171, 169, 167),
                     foregroundColor: Colors.black,
                     padding: const EdgeInsets.symmetric(vertical: 13),
                     textStyle: const TextStyle(fontWeight: FontWeight.w800),

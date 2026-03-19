@@ -113,6 +113,7 @@ class _MemberProfileDetailPageState extends State<MemberProfileDetailPage> {
       onPhotoLikePressed: widget.onPhotoLikePressed,
       onReportPressed: widget.onReportPressed,
       onHidePressed: widget.onHidePressed,
+      onRefresh: _load,
       margin: const EdgeInsets.fromLTRB(12, 10, 12, 16),
     );
   }

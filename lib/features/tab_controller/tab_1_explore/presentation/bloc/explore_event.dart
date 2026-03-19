@@ -17,6 +17,16 @@ class MemberSelected extends ExploreEvent {
   List<Object?> get props => [memberId];
 }
 
+class MemberDetailRefreshRequested extends ExploreEvent {
+  final int memberId;
+  final Completer<void> completer;
+
+  const MemberDetailRefreshRequested({required this.memberId, required this.completer});
+
+  @override
+  List<Object?> get props => [memberId];
+}
+
 class MemberLikePressed extends ExploreEvent {
   final int memberId;
 

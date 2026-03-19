@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bloc/bloc.dart';
 import 'package:connectify/features/tab_controller/tab_1_explore/domain/member_repository.dart';
 import 'package:connectify/shared/models/member.dart';
@@ -12,6 +14,7 @@ class ExploreBloc extends Bloc<ExploreEvent, ExploreState> {
   ExploreBloc(this.repository) : super(const ExploreState()) {
     on<ExploreLoaded>(_onLoaded);
     on<MemberSelected>(_onSelected);
+    on<MemberDetailRefreshRequested>(_onMemberDetailRefreshRequested);
     on<MemberLikePressed>(_onMemberLikePressed);
     on<PhotoLikePressed>(_onPhotoLikePressed);
     on<MatchRequestPressed>(_onMatchRequestPressed);
@@ -51,6 +54,22 @@ class ExploreBloc extends Bloc<ExploreEvent, ExploreState> {
     emit(state.copyWith(selectedMemberId: memberId, selectedMember: fallbackMember, memberDetailStatus: ExploreMemberDetailStatus.loading));
 
     await _loadMemberDetail(memberId: memberId, fallback: fallbackMember, emit: emit);
+  }
+
+  Future<void> _onMemberDetailRefreshRequested(MemberDetailRefreshRequested event, Emitter<ExploreState> emit) async {
+    try {
+      if (state.selectedMemberId != event.memberId) {
+        return;
+      }
+
+      final fallbackMember = _findMemberById(event.memberId) ?? state.selectedMember;
+      emit(state.copyWith(selectedMemberId: event.memberId, selectedMember: fallbackMember, memberDetailStatus: ExploreMemberDetailStatus.loading));
+      await _loadMemberDetail(memberId: event.memberId, fallback: fallbackMember, emit: emit);
+    } finally {
+      if (!event.completer.isCompleted) {
+        event.completer.complete();
+      }
+    }
   }
 
   Future<void> _onMemberLikePressed(MemberLikePressed event, Emitter<ExploreState> emit) async {

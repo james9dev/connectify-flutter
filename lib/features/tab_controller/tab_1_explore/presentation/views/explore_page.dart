@@ -1,4 +1,5 @@
 import 'dart:ui' show lerpDouble;
+import 'dart:async';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:connectify/core/di/di.dart';
@@ -162,6 +163,11 @@ class _ExploreViewState extends State<ExploreView> {
       onReportPressed: () => context.read<ExploreBloc>().add(MemberReported(selectedMember.id)),
       onHidePressed: () => context.read<ExploreBloc>().add(MemberHidden(selectedMember.id)),
       onRetryPressed: () => context.read<ExploreBloc>().add(MemberSelected(selectedMember.id)),
+      onRefresh: () {
+        final completer = Completer<void>();
+        context.read<ExploreBloc>().add(MemberDetailRefreshRequested(memberId: selectedMember.id, completer: completer));
+        return completer.future;
+      },
       onDetailScroll: onDetailScroll,
     );
   }
@@ -330,6 +336,7 @@ class _MemberDetailCard extends StatelessWidget {
     required this.onReportPressed,
     required this.onHidePressed,
     required this.onRetryPressed,
+    required this.onRefresh,
     required this.onDetailScroll,
   });
 
@@ -344,6 +351,7 @@ class _MemberDetailCard extends StatelessWidget {
   final VoidCallback onReportPressed;
   final VoidCallback onHidePressed;
   final VoidCallback onRetryPressed;
+  final RefreshCallback onRefresh;
   final ValueChanged<double> onDetailScroll;
 
   @override
@@ -360,6 +368,7 @@ class _MemberDetailCard extends StatelessWidget {
       onReportPressed: onReportPressed,
       onHidePressed: onHidePressed,
       onRetryPressed: onRetryPressed,
+      onRefresh: onRefresh,
       showRetryAction: detailStatus == ExploreMemberDetailStatus.failure,
       onDetailScroll: onDetailScroll,
     );
